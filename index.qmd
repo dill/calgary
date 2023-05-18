@@ -1,0 +1,18 @@
+# Preface {.unnumbered}
+
+This is a book about the kinds of things you can do in `mgcv` that you might not have realised that you can do in `mgcv`.
+
+Here are some possible topics:
+
+- Poisson process fitting
+- cross-validation
+- stochastic partial differential equation smoothing
+- capture-recapture (I think?)
+- being a secret Bayesian *and* being a more obvious Bayesian
+
+with bonus material on:
+
+- how to not do things in `mgcv` (how to import `mgcv` smoothers into other models/frameworks/software)
+
+
+

@@ -1,0 +1,22 @@
+project:
+  type: book
+
+book:
+  title: "Yes You Can do that in `mgcv`"
+  author: ""
+  date: ""
+  chapters:
+    - index.qmd
+    - intro.qmd
+    - references.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo
+  pdf:
+    documentclass: scrreprt
+
+
+
