@@ -4,7 +4,7 @@
     "href": "index.html",
     "title": "Yes You Can do that in mgcv",
     "section": "",
-    "text": "Preface\nThis is a book about the kinds of things you can do in mgcv that you might not have realised that you can do in mgcv.\nHere are some possible topics:\n\nPoisson process fitting\ncross-validation\nstochastic partial differential equation smoothing\ncapture-recapture (I think?)\nbeing a secret Bayesian and being a more obvious Bayesian\n\nwith bonus material on:\n\nhow to not do things in mgcv (how to import mgcv smoothers into other models/frameworks/software)"
+    "text": "Preface\nThis is a book about the kinds of things you can do in mgcv that you might not have realised that you can do in mgcv.\nHere are some possible topics:\n\nPoisson process fitting\ncross-validation\nstochastic partial differential equation smoothing\ncapture-recapture (I think?)\nbeing a secret Bayesian and being a more obvious Bayesian\n\nwith bonus material on:\n\nhow to do things not in mgcv (how to import mgcv smoothers into other models/frameworks/software)"
   },
   {
     "objectID": "intro.html",
@@ -12,19 +12,5 @@
     "title": "1  Introduction",
     "section": "",
     "text": "Some info here about the target audience, background knowledge, etc?"
-  },
-  {
-    "objectID": "summary.html",
-    "href": "summary.html",
-    "title": "2  Summary",
-    "section": "",
-    "text": "In summary, this book has no content whatsoever."
-  },
-  {
-    "objectID": "references.html",
-    "href": "references.html",
-    "title": "References",
-    "section": "",
-    "text": "Knuth, Donald E. 1984. “Literate Programming.” Comput.\nJ. 27 (2): 97–111. https://doi.org/10.1093/comjnl/27.2.97."
   }
 ]
