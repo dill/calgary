@@ -12,7 +12,7 @@ Here are some possible topics:
 
 with bonus material on:
 
-- how to not do things in `mgcv` (how to import `mgcv` smoothers into other models/frameworks/software)
+- how to do things not in `mgcv` (how to import `mgcv` smoothers into other models/frameworks/software)
 
 
 
