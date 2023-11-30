@@ -1,23 +1,22 @@
 project:
-  type: book
-  output-dir: docs
+  type: website
 
-book:
-  title: "Yes You Can do that in `mgcv`"
-  author: ""
-  date: ""
-  chapters:
-    - index.qmd
-    - intro.qmd
-    - references.qmd
-
-bibliography: references.bib
+website:
+  title: "Yes! You can do that in `mgcv`!"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - about.qmd
+      - text: Articles
+        menu:
+        - text: "GAM variance estimation"
+          href: articles/gamvar.html
+        - text: "Prediction intervals"
+          href: articles/prediction_intervals.html
 
 format:
   html:
     theme: cosmo
-  pdf:
-    documentclass: scrreprt
-
-
-
+    css: styles.css
+    toc: true
