@@ -1,6 +1,8 @@
-# Preface {.unnumbered}
+---
+title: Yes! You can do that in mgcv
+---
 
-This is a book about the kinds of things you can do in `mgcv` that you might not have realised that you can do in `mgcv`.
+This is a website about the kinds of things you can do in `mgcv` that you might not have realised that you can do in `mgcv`.
 
 Here are some possible topics:
 

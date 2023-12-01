@@ -1,0 +1,10 @@
+---
+title: Contributing material
+
+---
+
+# Yaaaay!
+
+You have an example of a thing you can do in `mgcv`? You'd like to share that? That's awesome.
+
+The easiest way to do that is to submit a pull request to the [site github](https://github.com/dill/calgary) or suggest a topic via the issue tracker.
