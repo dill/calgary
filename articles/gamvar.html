@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="David L Miller">
+
+<title>Yes! You can do that in mgcv! - Model parameter uncertainty estimation approaches for generalized additive models</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<!-- thanks to Eli Holmes for this trick! https://github.com/quarto-dev/quarto-cli/issues/2275 -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: {autoNumber: "AMS"} },
+  tex2jax: {inlineMath: [ ['$','$'], ["\\(","\\)"] ]}
+});
+</script>
+
+<!-- This is what works with Quarto -->
+<script>
+  MathJax = {
+    tex: {
+      tags: 'ams'  // should be 'ams', 'none', or 'all'
+    }
+  };
+</script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">Yes! You can do that in <code>mgcv</code>!</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html" rel="" target="">
+ <span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html" rel="" target="">
+ <span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../contributing.html" rel="" target="">
+ <span class="menu-text">Contributing material</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-articles" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">Articles</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-articles">    
+        <li>
+    <a class="dropdown-item" href="../articles/gamvar.html" rel="" target="">
+ <span class="dropdown-text">GAM variance estimation</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../articles/prediction_intervals.html" rel="" target="">
+ <span class="dropdown-text">Prediction intervals</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <div class="quarto-navbar-tools ms-auto">
+</div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#making-predictions-with-a-gam" id="toc-making-predictions-with-a-gam" class="nav-link" data-scroll-target="#making-predictions-with-a-gam">Making predictions with a GAM</a></li>
+  </ul></li>
+  <li><a href="#approaches-to-estimating-variance" id="toc-approaches-to-estimating-variance" class="nav-link" data-scroll-target="#approaches-to-estimating-variance">Approaches to estimating variance</a>
+  <ul class="collapse">
+  <li><a href="#analytic-estimation" id="toc-analytic-estimation" class="nav-link" data-scroll-target="#analytic-estimation">Analytic estimation</a></li>
+  <li><a href="#posterior-simulation" id="toc-posterior-simulation" class="nav-link" data-scroll-target="#posterior-simulation">Posterior simulation</a></li>
+  <li><a href="#bootstrapping" id="toc-bootstrapping" class="nav-link" data-scroll-target="#bootstrapping">Bootstrapping</a></li>
+  </ul></li>
+  <li><a href="#practical-examples" id="toc-practical-examples" class="nav-link" data-scroll-target="#practical-examples">Practical examples</a>
+  <ul class="collapse">
+  <li><a href="#analytic-method" id="toc-analytic-method" class="nav-link" data-scroll-target="#analytic-method">Analytic method</a></li>
+  <li><a href="#posterior-simulation-1" id="toc-posterior-simulation-1" class="nav-link" data-scroll-target="#posterior-simulation-1">Posterior simulation</a></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a></li>
+  <li><a href="#acknowledgements" id="toc-acknowledgements" class="nav-link" data-scroll-target="#acknowledgements">Acknowledgements</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Model parameter uncertainty estimation approaches for generalized additive models</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>David L Miller </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="abstract" class="level1">
+<h1>Abstract</h1>
+<p>This document aims to clear up which approaches are appropriate for estimation of variance of the parameters (and dervied quantities from those parameters) of generalized additive models. Three approaches are discussed: analytic, posterior simulation and bootstrap.</p>
+</section>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Here we assume we have a generalized additive model (GAM; <span class="citation" data-cites="wood2017generalized">Wood (<a href="#ref-wood2017generalized" role="doc-biblioref">2017</a>)</span>), which we have fitted by REML estimation <span class="citation" data-cites="wood2011faststable">(<a href="#ref-wood2011faststable" role="doc-biblioref">Wood, 2011</a>)</span> using the R package <code>mgcv</code> <span class="citation" data-cites="wood2016smoothing">(<a href="#ref-wood2016smoothing" role="doc-biblioref">Wood <em>et al.</em>, 2016</a>)</span>. Much of this is more general than that, but let’s stick to those bounds for now. If we model some response <span class="math inline">\(y\)</span>, as smooth functions of some covariates <span class="math inline">\(z_{k}\)</span>, with an offset of <span class="math inline">\(A\)</span>, our models often look something like: <span class="math display">\[\begin{equation}
+y_{i}=g^{-1}\left(g(A_{i})+\beta_{0}+\sum_{k}f_{k}(z_{ik})\right),\label{eq:gam}
+\end{equation}\]</span> where <span class="math inline">\(g\)</span> is the link function (e.g., <span class="math inline">\(\log\)</span>), <span class="math inline">\(A\)</span> is an offset, <span class="math inline">\(y\)</span> is the response (with some extended exponential family distribution), <span class="math inline">\(\beta_{0}\)</span> is an intercept and the <span class="math inline">\(f_{k}\)</span> are smooths of the explanatory covariates <span class="math inline">\(z_{k}\)</span>. The <span class="math inline">\(f_{k}\)</span>s have basis-penalty form, so we can always write them as <span class="math display">\[\begin{equation*}
+f_{k}(z)=\sum_{j=1}^{J}\beta_{j}b_{j}(z),
+\end{equation*}\]</span> and each <span class="math inline">\(f_{k}\)</span> is penalized by some (sum of) quadratic penalties, <span class="math inline">\(\sum_{m}\boldsymbol{\beta}^\text{T}\mathbf{S}_{m}\boldsymbol{\beta}\)</span>, whose influence is controlled by smoothing parameter(s) denoted by <span class="math inline">\(\lambda\)</span> (or <span class="math inline">\(\boldsymbol{\lambda}\)</span>).</p>
+<p>An example of the model in (<span class="math inline">\(\ref{eq:gam}\)</span>) would be a model where the response are counts, <span class="math inline">\(n_{i}\)</span> at segments <span class="math inline">\(i=1,...,n_{\text{seg}}\)</span> (which are, say, Tweedie distributed). Each segment has area <span class="math inline">\(A_{i}\)</span> and an estimated probability of detection <span class="math inline">\(\hat{p}_{i}\)</span> per segment (calculated using distance sampling methods). We then might have some covariates, say, space (<span class="math inline">\(\texttt{lat}_{i}\)</span> and <span class="math inline">\(\texttt{lon}_{i}\)</span>) and depth (<span class="math inline">\(\texttt{Depth}_{i}\)</span>) measured at the segments which we smooth, Our model is then: <span class="math display">\[\begin{equation}
+n_{i}=\exp\left(\log_{e}A_{i}\hat{p}_{i}+\beta_{0}+f_{\text{space}}(\texttt{lat}_{i},\texttt{lon}_{i})+f_{\text{depth}}(\texttt{Depth}_{i})\right),\label{eq:dsm}
+\end{equation}\]</span> we might refer to this as a “density surface model” <span class="citation" data-cites="miller2013spatial">(<a href="#ref-miller2013spatial" role="doc-biblioref">Miller <em>et al.</em>, 2013</a>)</span>.</p>
+<p>Once the model has been fitted we have estimates of the coefficients, <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>, conditional on the data and smoothing parameters. Given the Bayesian interpretation of GAMs as fitted via REML in <code>mgcv</code> <span class="citation" data-cites="miller2019bayesian">(<a href="#ref-miller2019bayesian" role="doc-biblioref">Miller, 2019</a>)</span>, we can think of <span class="math inline">\(\boldsymbol{\beta}\)</span> as having posterior (conditional on the response and the smoothing parameters) such that <span class="math inline">\(\boldsymbol{\beta}\vert\boldsymbol{n},\boldsymbol{\lambda}\sim\text{MVN}(\hat{\boldsymbol{\beta}},\boldsymbol{V}_{\hat{\boldsymbol{\beta}}})\)</span>. Here <span class="math inline">\(\boldsymbol{V}_{\hat{\boldsymbol{\beta}}}\)</span> is the variance-covariance matrix of the <span class="math inline">\(\boldsymbol{\beta}\)</span>s, which is calculated from the data, smoothing parameters and penalty matrices (generally, <span class="math inline">\(\boldsymbol{V}_{\hat{\boldsymbol{\beta}}}=(\boldsymbol{X}^\text{T}\boldsymbol{W}\boldsymbol{X}+\boldsymbol{S}_{\lambda})^{-1}\phi\)</span>, where <span class="math inline">\(\boldsymbol{S}_{\lambda}\)</span> is the penalty matrix for the whole model with the smoothing parameters absorbed). Here we are going to ignore variance in the smoothing parameters, though see discussion for a general approach to deal with this issue.</p>
+<section id="making-predictions-with-a-gam" class="level2">
+<h2 class="anchored" data-anchor-id="making-predictions-with-a-gam">Making predictions with a GAM</h2>
+<p>We are not usually interested in the variance of the coefficients (<span class="math inline">\(\boldsymbol{\beta}\)</span>) themselves, but rather some derived quantity like predictions or summary statistics of predictions. We want to evaluate (<span class="math inline">\(\ref{eq:dsm}\)</span>) at (new) values of the covariates such that:</p>
+<p><span class="math display">\[\begin{equation}
+n_{m}^{*}=\exp\left(\log_{e}A_{m}+\beta_{0}+f_{\text{space}}(\texttt{lat}_{m},\texttt{lon}_{m})+f_{\text{depth}}(\texttt{Depth}_{m})\right),\label{eq:dsm-1}
+\end{equation}\]</span> In “Practical examples” below, I’ll show some examples for count data, where the quantity of interest is abundance over some region: sums of predictions over some grid.</p>
+<p>Before going into variance estimation, we first recap how predictions are formed in GAMs. We have estimated <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span> and want to make predictions at some new data locations. Prediction is usually explained as “plugging-in” the new covariate values into equation (<span class="math inline">\(\ref{eq:gam}\)</span>) (or (<span class="math inline">\(\ref{eq:dsm}\)</span>)). This is true, but doesn’t fully explain what’s going on. When we build our model, we form a design matrix (<span class="math inline">\(\mathbf{X}\)</span>), the rows of which correspond to observations and the columns correspond to the basis functions of the smooths (or just the covariates in the case of a GLM). To make a prediction we need to do the same thing again for these (<span class="math inline">\(M\)</span>) new prediction locations, so we form <span class="math inline">\(\mathbf{X}_{p}\)</span>, the <span class="citation" data-cites="wood2017generalized">(<a href="#ref-wood2017generalized" role="doc-biblioref">Wood, 2017</a>)</span>, which will look something like: <span class="math display">\[
+\mathbf{X}_{p}=\left(\begin{array}{ccccccc}
+1 &amp; b_{\texttt{a},1}(x_{\texttt{a},1}) &amp; b_{\texttt{a},2}(x_{\texttt{a},1}) &amp; \dotsc &amp; b_{\texttt{b},1}(x_{\texttt{b},1}) &amp; b_{\texttt{b},2}(x_{\texttt{b},1}) &amp; \dotsc\\
+1 &amp; b_{\texttt{a},1}(x_{\texttt{a},2}) &amp; b_{\texttt{a},2}(x_{\texttt{a},2}) &amp; \dotsc &amp; b_{\texttt{b},1}(x_{\texttt{b},2}) &amp; b_{\texttt{b},2}(x_{\texttt{b},2}) &amp; \dotsc\\
+\vdots &amp; \vdots &amp; \vdots &amp; \vdots &amp; \vdots &amp; \vdots &amp; \vdots\\
+1 &amp; b_{\texttt{a},1}(x_{\texttt{a},M}) &amp; b_{\texttt{a},1}(x_{\texttt{a},M}) &amp; \dotsc &amp; b_{\texttt{b},1}(x_{\texttt{b},M}) &amp; b_{\texttt{b},1}(x_{\texttt{b},M}) &amp; \dotsc
+\end{array}\right),
+\]</span> where the first column of 1s is for the intercept term and <span class="math inline">\(b_{\texttt{a},j}(x_{\texttt{a},m})\)</span> is the evaluation of the <span class="math inline">\(j\)</span>th basis function for covarite <span class="math inline">\(\texttt{a}\)</span>, measured as <span class="math inline">\(x_{\texttt{a},i}\)</span> for prediction point <span class="math inline">\(i\)</span>. Mutliplying <span class="math inline">\(\mathbf{X}_{p}\)</span> by the estimated model coefficients (<span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>), we get the linear predictor <span class="math inline">\(\boldsymbol{\eta}=\mathbf{X}_{p}\hat{\boldsymbol{\beta}}\)</span>. We then need to apply the (inverse) link function (<span class="math inline">\(g^{-1}\)</span>) to the linear predictor to get predictions on the correct scale (<span class="math inline">\(\mathbf{y}=g^{-1}\left(\boldsymbol{\eta}\right)=g^{-1}\left(\mathbf{X}_{p}\hat{\boldsymbol{\beta}}\right)\)</span>). We often want to summarize the resulting predictions, for example by summing them, so we calculate <span class="math inline">\(y^{*}=\sum_{m=1}^{M}y_{m}\)</span>. We could also write this in matrix notation as <span class="math inline">\(y^{*}=\mathbf{1}g^{-1}\left(\mathbf{X}_{p}\hat{\boldsymbol{\beta}}\right)\)</span> where <span class="math inline">\(\mathbf{1}\)</span> is a row-vector of 1s the same length as <span class="math inline">\(\textbf{y}\)</span>. <span class="math inline">\(\mathbf{X}_{p}\)</span> is sometimes known as the “projection matrix” or “<span class="math inline">\(\mathbf{L}_{p}\)</span> matrix”. It maps the estimated coefficients to the predicted values (on the link scale). Thinking of <span class="math inline">\(\mathbf{X}_{p}\)</span> as a way to move between the coefficients and derived model quantities (like predictions) is key to understanding how variance can be estimated in the cases below.</p>
+<p>A simple example shows how this works in <code>mgcv</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: nlme</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>This is mgcv 1.9-1. For overview type 'help("mgcv-package")'.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="do">## simulate some data...</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">gamSim</span>(<span class="dv">1</span>,<span class="at">n=</span><span class="dv">400</span>,<span class="at">dist=</span><span class="st">"normal"</span>,<span class="at">scale=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Gu &amp; Wahba 4 term additive model</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fit a model</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">gam</span>(y<span class="sc">~</span><span class="fu">s</span>(x0),<span class="at">data=</span>dat)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># prediction matrix</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x0 =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out=</span><span class="dv">100</span>))</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># build the Xp matrix</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>Xp <span class="ot">&lt;-</span> <span class="fu">predict</span>(b, pred, <span class="at">type=</span><span class="st">"lpmatrix"</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># compare "manual" generation of predictions to those from predict()</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>manual <span class="ot">&lt;-</span> Xp <span class="sc">%*%</span> <span class="fu">coef</span>(b)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>auto <span class="ot">&lt;-</span> <span class="fu">predict</span>(b, pred)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co"># need to convert auto to be a matrix</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(manual, <span class="fu">as.matrix</span>(auto))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="approaches-to-estimating-variance" class="level1 page-columns page-full">
+<h1>Approaches to estimating variance</h1>
+<p>As covered above, we know what the variance of the estimated model coefficients is (and we denote that <span class="math inline">\(\boldsymbol{V}_{\hat{\boldsymbol{\beta}}}\)</span>). Analogous to the case of the predictions above, we don’t care about the estimated parameters themselves, but want to know properties of the predictions. There are three options for estimating variance of the predictions for GAMs:</p>
+<ul>
+<li><em>Analytic estimation</em> via standard linear model theory.</li>
+<li><em>Posterior simulation</em> via the Bayesian interpretation of the model and distributional results.</li>
+<li><em>Non-parametric bootstrapping</em> via resampling ideas.</li>
+</ul>
+<p>The next three sections address these approaches in turn.</p>
+<section id="analytic-estimation" class="level2">
+<h2 class="anchored" data-anchor-id="analytic-estimation">Analytic estimation</h2>
+<p>Once we have fitted our model, we have not only the coefficients <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>, but also a posterior covariance matrix of those coefficients, <span class="math inline">\(\boldsymbol{V}_{\hat{\boldsymbol{\beta}}}\)</span>. What we’d really like is the variance of our linear predictor (<span class="math inline">\(\boldsymbol{\eta}=\mathbf{X}\boldsymbol{\beta}\)</span>) or some function of the linear predictor (<span class="math inline">\(h(\boldsymbol{\eta})=h(\mathbf{X}\boldsymbol{\beta}\)</span>)). By the delta method (e.g., <span class="citation" data-cites="wasserman2004allof">(<a href="#ref-wasserman2004allof" role="doc-biblioref">Wasserman, 2004</a>)</span> or <span class="citation" data-cites="seber1987estimation">(<a href="#ref-seber1987estimation" role="doc-biblioref">Seber, 1987</a>)</span>), we know that we can calculate the variance of some function of the linear predictor as: <span class="math display">\[\begin{align}
+\text{Var}[h(\boldsymbol{\eta})] &amp; =\left(\frac{\partial h(\boldsymbol{\eta})}{\partial\boldsymbol{\beta}}\Bigg\vert_{\boldsymbol{\beta}=\boldsymbol{\hat{\beta}}}\right)^\text{T}\text{Var}(\boldsymbol{\beta})\left(\frac{\partial h(\boldsymbol{\eta})}{\partial\boldsymbol{\beta}}\Bigg\vert_{\boldsymbol{\beta}=\boldsymbol{\hat{\beta}}}\right)\\
+&amp; =\left(\frac{\partial h(\boldsymbol{\eta})}{\partial\boldsymbol{\beta}}\Bigg\vert_{\boldsymbol{\beta}=\boldsymbol{\hat{\beta}}}\right)^\text{T}\boldsymbol{V}_{\hat{\boldsymbol{\beta}}}\left(\frac{\partial h(\boldsymbol{\eta})}{\partial\boldsymbol{\beta}}\Bigg\vert_{\boldsymbol{\beta}=\boldsymbol{\hat{\beta}}}\right), \label{eq:delta-general}
+\end{align}\]</span> where the derivative terms are the derivatives of <span class="math inline">\(h(\boldsymbol{\eta})\)</span> with respect to the model parameters (<span class="math inline">\(\boldsymbol{\beta}\)</span>) evaluated at their estimates. Intuitively we can think of this expression as rotating and rescaling the variance-covariance matrix of the mode l parameters first to the scale of the linear predictor and then into the space of <span class="math inline">\(h\)</span>().</p>
+<p>Following on with our density surface example, if we wanted the variance of each prediction, in that case we think of the function <span class="math inline">\(h\)</span> as just the link function <span class="math inline">\(h(\boldsymbol{\eta})=g(\boldsymbol{\eta})\)</span>. If we use a Tweedie for the response and therefore a <span class="math inline">\(\log_{e}\)</span> link, we have that <span class="math inline">\(h(\hat{\boldsymbol{\eta}})=\text{exp}(\hat{\boldsymbol{\eta}})=\hat{\mathbf{n}}\)</span> (if we start thinking in terms of the estimated model and <span class="math inline">\(\hat{\mathbf{n}}\)</span> is a vector of estimated abundances). So we can then calculate: <span class="math display">\[\begin{align}
+\text{Var}(\hat{\mathbf{n}}) &amp; =\left(\frac{\partial\mathbf{n}}{\partial\boldsymbol{\beta}}\Bigg\vert_{\boldsymbol{\beta}=\boldsymbol{\hat{\beta}}}\right)^\text{T}\boldsymbol{V}_{\hat{\boldsymbol{\beta}}}\left(\frac{\partial\mathbf{n}}{\partial\boldsymbol{\beta}}\Bigg\vert_{\boldsymbol{\beta}=\boldsymbol{\hat{\beta}}}\right),\label{eq:delta-varn}
+\end{align}\]</span> here we rescaling the variance-covariance of <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span> to be that of the estimated counts. In this case <span class="math inline">\(\text{Var}(\hat{\mathbf{n}})\)</span> would be a vector of variances about the predictions (when calling <code>predict(model, se.fit=TRUE, type=''response'')</code> in <code>mgcv</code>, the <code>$se.fit</code> terms are <span class="math inline">\(\sqrt{\text{Var}(\hat{\mathbf{n}})}\)</span> <span class="citation" data-cites="wood2017generalized">(<a href="#ref-wood2017generalized" role="doc-biblioref">Wood, 2017</a>)</span>) .</p>
+<p>In our density surface model example, we might really want to know about <span class="math inline">\(\hat{N}=\sum\hat{N}_{i}\)</span> where <span class="math inline">\(\hat{N}_{i}\)</span> are predicted abundances over some grid and we wish to know the total abundance <span class="math inline">\(\hat{N}\)</span> and its variance <span class="math inline">\(\text{Var}(\hat{N})\)</span>:</p>
+<p><span class="math display">\[\begin{align}
+\text{Var}(\hat{N}) &amp; =\left(\frac{\partial\hat{N}}{\partial\boldsymbol{\beta}}\Bigg\vert_{\boldsymbol{\beta}=\boldsymbol{\hat{\beta}}}\right)^\text{T}\boldsymbol{V}_{\hat{\boldsymbol{\beta}}}\left(\frac{\partial\hat{N}}{\partial\boldsymbol{\beta}}\Bigg\vert_{\boldsymbol{\beta}=\boldsymbol{\hat{\beta}}}\right),\label{eq:delta-varNhat}
+\end{align}\]</span> where we expand out <span class="math inline">\(\hat{N}=\sum\hat{N}_{i}=\mathbf{A}g^{-1}\left(\mathbf{X}_{p}\hat{\boldsymbol{\beta}}\right)\)</span> to take the derivative where <span class="math inline">\(\mathbf{A}\)</span> is a row vector of prediction grid cell areas. Since we usually use a <span class="math inline">\(\log\)</span>-link, we end up with <span class="math inline">\(g^{-1}(x)=\exp(x)\)</span>, so: <span class="math display">\[\begin{align*}
+\frac{\partial\hat{N}}{\partial\boldsymbol{\beta}}\Bigg\vert_{\boldsymbol{\beta}=\boldsymbol{\hat{\beta}}} &amp; =\frac{\partial}{\partial\boldsymbol{\beta}}\left[\mathbf{A}\exp\left(\mathbf{X}_{p}\boldsymbol{\beta}\right)\right]\\
+&amp; =\mathbf{A}\left(\exp\left(\mathbf{X}_{p}\hat{\boldsymbol{\beta}}\right)\odot\mathbf{X}_{p}\right),
+\end{align*}\]</span> where <span class="math inline">\(\odot\)</span> indicates element-wise multiplication (so the <span class="math inline">\(i,j\)</span>th entry in <span class="math inline">\(\exp\left(\mathbf{X}_{p}\hat{\boldsymbol{\beta}}\right)\odot\mathbf{X}_{p}\)</span> is <span class="math inline">\(\exp\left(\left[\mathbf{X}_{p}\right]_{.,j}\hat{\boldsymbol{\beta}}\right)\left[\mathbf{X}_{p}\right]_{ij}\)</span>, where <span class="math inline">\(\left[\right]_{ij}\)</span> denotes the <span class="math inline">\(i,j\)</span>th entry of a matrix). So, our final (messy) expression is: <span class="math display">\[
+\begin{align}
+\text{Var}(\hat{N}) &amp; =\left(\mathbf{A}\left(\exp\left(\mathbf{X}_{p}\hat{\boldsymbol{\beta}}\right)\odot\mathbf{X}_{p}\right)\right)^\text{T}\boldsymbol{V}_{\hat{\boldsymbol{\beta}}}\left(\mathbf{A}\left(\exp\left(\mathbf{X}_{p}\hat{\boldsymbol{\beta}}\right)\odot\mathbf{X}_{p}\right)\right),\label{eq:delta-varNhat-1}
+\end{align}
+\]</span> This is the method implemented in <code>dsm::dsm.var.gam</code>, <code>dsm::dsm.var.prop</code> and <code>dsm::dsm_varprop</code>. Note that we could instead calculate <span class="math inline">\(\frac{\partial\hat{N}}{\partial\boldsymbol{\beta}}\Bigg\vert_{\boldsymbol{\beta}=\boldsymbol{\hat{\beta}}}\)</span> numerically by finite-differencing.</p>
+</section>
+<section id="posterior-simulation" class="level2">
+<h2 class="anchored" data-anchor-id="posterior-simulation">Posterior simulation</h2>
+<p>We can also use the fact that fitting a GAM in <code>mgcv</code> is an empirical Bayes procedure, so we have a posterior distribution for <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span> given the smoothing parameter estimates, <span class="math inline">\(\hat{\boldsymbol{\lambda}}\)</span>, (as described above). As an example see Figure <a href="#fig-posterior-example">Figure&nbsp;1</a> where posterior samples of <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span> are used to construct multiple smooths, these smooths then follow the properties of the analytical estimates (based on Bayesian arguments by <span class="citation" data-cites="nychka1988bayesian">Marra and Wood (<a href="#ref-marra2012coverage" role="doc-biblioref">2012</a>)</span>). As can be seen from the plot, the generated grey curves mostly lie within the <span class="math inline">\(\pm2\)</span> standard error dashed lines.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-posterior-example" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="gamvar_files/figure-html/fig-posterior-example-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Figure&nbsp;1: Fitted model (black lines) with confidence band (limits in dashed lines) generated from <code>predict(..., se.fit=TRUE)</code> along with 200 samples from the posterior of the model (grey).</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We generate the grey curves by simply generating <span class="math inline">\(\boldsymbol{\beta}_{b}\sim N(\hat{\boldsymbol{\beta}},\mathbf{V}_{\hat{\boldsymbol{\beta}}})\)</span>, then multiplying by the prediction matrix (<span class="math inline">\(\mathbf{X}_{p}\)</span>) to obtain predictions on the linear predictor scale (then applying the link function if necessary). This approach can be particularly handy in the case where we want to calculate the variance of some summary of the linear predictor values. This is particularly useful as the link function is often a non-linear function of the linear predictor, so the approximation in (<span class="math inline">\(\ref{eq:delta-general}\)</span>) might not be appropriate.</p>
+<p>As an alternative to (<span class="math inline">\(\ref{eq:delta-varNhat}\)</span>), the following algorithm can be used:</p>
+<ol type="1">
+<li>For <span class="math inline">\(b=1,\ldots,B\)</span>:</li>
+<li>Simulate from <span class="math inline">\(N(\hat{\boldsymbol{\beta}},\mathbf{V}_{\hat{\boldsymbol{\beta}}})\)</span>, to obtain <span class="math inline">\(\boldsymbol{\beta}_{b}\)</span>.</li>
+<li>Calculate predicted abundance for this <span class="math inline">\(\boldsymbol{\beta}_{b}\)</span>, <span class="math inline">\(\hat{N}_{b}^{*}=\mathbf{1}g^{-1}\left(\mathbf{X}_{p}\boldsymbol{\beta}_{b}\right)\)</span></li>
+<li>Store <span class="math inline">\(\hat{N}_{b}^{*}\)</span>.</li>
+<li>Calculate the empirical variance or percentiles of the <span class="math inline">\(\hat{N}_{b}\)</span>s.</li>
+</ol>
+<p>In practice <span class="math inline">\(B\)</span> does not have to be particularly large. <span class="citation" data-cites="marra2012modelling">(<a href="#ref-marra2012modelling" role="doc-biblioref">Marra <em>et al.</em>, 2012</a>)</span> achieve reasonable results with <span class="math inline">\(B=100\)</span>.</p>
+</section>
+<section id="bootstrapping" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="bootstrapping">Bootstrapping</h2>
+<p>A popular reply to the question of how to calculate uncertainty for complex models is “do a bootstrap”. What is meant by this is usually that one should resample the data with replacement, refitting models each time and calculating some summary statistic. This seems appealing but has been shown <span class="citation" data-cites="laird1987empirical carlin1991asample">(<a href="#ref-carlin1991asample" role="doc-biblioref">Carlin and Gelfand, 1991</a>; <a href="#ref-laird1987empirical" role="doc-biblioref">Laird and Louis, 1987</a>)</span> that the use of so-called “na�ve” bootstraps leads to underestimation of uncertainty. The issue stems from the fact that GAM terms are essentially structured random effects, which have priors on them. When data is resampled, the prior structure is ignored so the prior uncertainty is collapsed leaving only the sampling variation in the bootstrap resamples. <span class="citation" data-cites="bravington2018reliable">(<a href="#ref-bravington2018reliable" role="doc-biblioref">Bravington <em>et al.</em>, 2018</a>)</span> show a simple simulated example of this happening. Simply put, the bootstrap makes the assumption that all possible distinct values of the covariates have been observed <span class="citation" data-cites="rubin1981thebayesian">(<a href="#ref-rubin1981thebayesian" role="doc-biblioref">Rubin, 1981</a>)</span>.</p>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p>Rasmus B��th gives a good explanation of a non-parametric bootstrap from a Bayesian point of view here: [http://www.sumsar.net/blog/2015/04/the-non-parametric-bootstrap-as-a-bayesian-model/].</p>
+</div></div><p>It’s not <em>impossible</em> to concoct some kind of special bootstrap that could deal with this situation, what is sure is that this would require some careful thinking in each situation. The previous two methods <em>just work</em>.</p>
+</section>
+</section>
+<section id="practical-examples" class="level1">
+<h1>Practical examples</h1>
+<p>To show these techniques, we can first fit models to the sperm whale line transect data from NOAA NEFSC/SEFSC cruises. The transects and observations are shown in Figure <a href="#fig-spermwhale-data">Figure&nbsp;2</a>.</p>
+<p>First loading the data, fitting a detection function (to obtain <span class="math inline">\(\hat{p}\)</span>), then fitting the spatial model:</p>
+<div class="cell" data-hash="gamvar_cache/html/spermwhale-loadfit_857a093ccbc821355c78406a330ff579">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dsm)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Distance)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># load sperm whale survey data</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">"spermwhale.RData"</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># fit a detection function</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">ds</span>(dist, <span class="at">truncation=</span><span class="dv">5000</span>, <span class="at">key=</span><span class="st">"hn"</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co"># fit the GAM</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">dsm</span>(count<span class="sc">~</span><span class="fu">s</span>(x,y, <span class="at">k=</span><span class="dv">40</span>, <span class="at">bs=</span><span class="st">"ts"</span>) <span class="sc">+</span> <span class="fu">s</span>(Depth, <span class="at">bs=</span><span class="st">"ts"</span>),</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">ddf.obj=</span>df, <span class="at">segment.data=</span>segs,</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">observation.data=</span>obs, <span class="at">family=</span><span class="fu">tw</span>())</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="co"># estimating abundance</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>Nhat <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">predict</span>(m, predgrid))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Models fitted by <code>dsm</code> are GAMs (the <code>dsm</code> function just calls <code>gam</code>, prior to that it’s just doing some data manipulation), so the techniques described above can be used for them, as well as for any GAM (though see Discussion for further extensions). Ignoring goodness-of-fit, model assessment and so forth for now, we can move on to making the calculations above in code.</p>
+<div class="cell" data-hash="gamvar_cache/html/fig-spermwhale-data_b2b70ebc5aa30d1cd250cdd2b2b995ec">
+<div class="cell-output-display">
+<div id="fig-spermwhale-data" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="gamvar_files/figure-html/fig-spermwhale-data-1.png" class="img-fluid figure-img" width="768"></p>
+<figcaption class="figure-caption">Figure&nbsp;2: Plot of the sperm whale data. Each grey dot indicates the location of the centroid of a transect approximately 10km square. Blue dots indicate locations where sperm whales were observed.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<section id="analytic-method" class="level2">
+<h2 class="anchored" data-anchor-id="analytic-method">Analytic method</h2>
+<p>To make the analytic variance calculation given in (<span class="math inline">\(\ref{eq:delta-varNhat}\)</span>), we need the ingredients for that: <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span> (the estimated coefficients, <span class="math inline">\(\mathbf{X}_{p}\)</span> (the prediction matrix) and <span class="math inline">\(\boldsymbol{V}_{\hat{\boldsymbol{\beta}}}\)</span> (posterior variance-covariance matrix for <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>). These are obtained as follows:</p>
+<div class="cell" data-hash="gamvar_cache/html/spermwhale-getbits_85e71a02bd1159d8f5263876f7f0af70">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># the coefficients</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>betas <span class="ot">&lt;-</span> m<span class="sc">$</span>coef</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># prediction matrix</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>Xp <span class="ot">&lt;-</span> <span class="fu">predict</span>(m, predgrid, <span class="at">type=</span><span class="st">"lpmatrix"</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co"># posterior variance-covariance for the betas</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>Vbeta <span class="ot">&lt;-</span> <span class="fu">vcov</span>(m, <span class="at">unconditional=</span><span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can then simply write-out the mathematics:</p>
+<div class="cell" data-hash="gamvar_cache/html/spermwhale-analytic_5c0c1863640a9f41f637a639013cc1c3">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># row vector of areas</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>areas <span class="ot">&lt;-</span> <span class="fu">matrix</span>(predgrid<span class="sc">$</span>off.set, <span class="at">nrow=</span><span class="dv">1</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate the "bread" (either side of our matrix "sandwich")</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate this in 2 bits...</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>expxb <span class="ot">&lt;-</span> <span class="fu">diag</span>(<span class="fu">exp</span>(Xp<span class="sc">%*%</span>betas)[,<span class="dv">1</span>], <span class="at">ncol=</span><span class="fu">nrow</span>(Xp), <span class="at">nrow=</span><span class="fu">nrow</span>(Xp))</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>bread <span class="ot">&lt;-</span> expxb <span class="sc">%*%</span> Xp</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># get the variance without the offset</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>V_analytic <span class="ot">&lt;-</span> bread <span class="sc">%*%</span> Vbeta <span class="sc">%*%</span> <span class="fu">t</span>(bread)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co"># multiply up by the offset</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>V_analytic <span class="ot">&lt;-</span> areas <span class="sc">%*%</span> V_analytic <span class="sc">%*%</span> <span class="fu">t</span>(areas)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co"># standard error</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="fu">sqrt</span>(V_analytic)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        [,1]
+[1,] 344.953</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># CV</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sqrt</span>(V_analytic)<span class="sc">/</span>Nhat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          [,1]
+[1,] 0.1316786</code></pre>
+</div>
+</div>
+</section>
+<section id="posterior-simulation-1" class="level2">
+<h2 class="anchored" data-anchor-id="posterior-simulation-1">Posterior simulation</h2>
+<p>We can get to the same result by doing posterior simulation, using the variables <code>betas</code>, <code>Xp</code> and <code>Vbeta</code> from the above:</p>
+<div class="cell" data-hash="gamvar_cache/html/spermwhale-sim_4864f093f8bae06dca81a88465a7f4e5">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">211</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># number of samples</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>nsamp <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co"># storage for samples</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, nsamp)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>nsamp){</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># sample from the posterior of the model parameters</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  br <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rmvn</span>(<span class="dv">1</span>, betas, Vbeta))</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># make a prediction on the link scale</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>  pr <span class="ot">&lt;-</span> Xp <span class="sc">%*%</span> br</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># offset and transform, storing in res</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  res[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(predgrid<span class="sc">$</span>off.set<span class="sc">*</span><span class="fu">exp</span>(pr))</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="co"># can do this quickly in 2 lines as</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="co"># br &lt;- rmvn(nsamp, betas, Vbeta)</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a><span class="co"># res &lt;- colSums(predgrid$off.set * exp(Xp %*% t(br)))</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate the standard error</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a><span class="fu">sqrt</span>(<span class="fu">var</span>(res))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 393.0305</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># CV</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sqrt</span>(<span class="fu">var</span>(res))<span class="sc">/</span>Nhat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.1500312</code></pre>
+</div>
+</div>
+<p>Note that here we see that the CV (and standard error) is a little larger than for the delta method. In part because of the link function making extreme values more extreme (but only in one direction). We could get around this by implementing some kind of importance (or Metropolis-Hastings) sampler, ensuring that more values are sampled near “realistic” values or simply by increasing <code>nsamp</code>. Since we are sampling from a multivariate normal, the procedure is relatively fast and we can afford to make <code>nsamp</code> relatively large. The likely bottleneck in the code is the matrix multiplication when the two line method is used.</p>
+<div class="cell" data-hash="gamvar_cache/html/fig-spermwhale-hist_4a8ff04e17860f17c6a4a0611b9a08f3">
+<div class="cell-output-display">
+<div id="fig-spermwhale-hist" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="gamvar_files/figure-html/fig-spermwhale-hist-1.png" class="img-fluid figure-img" width="864"></p>
+<figcaption class="figure-caption">Figure&nbsp;3: Left: histogram of posterior samples of abundance for the sperm whale data. Right: posterior samples from the depth smooth.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<p>Above I’ve described three methods for estimating variance from GAMs, specifically with examples from spatial modelling of distance sampling data. It has been clear for some time that nonparametric bootstrap-based methods are not appropriate for models with random effects, but the alternatives have not been laid-out, especially for spatial data. Hopefully the examples here show how internal functions in <code>dsm</code> work, and how they can be implemented for those who don’t use that package.</p>
+<p>For those dealing with DSMs, the above doesn’t directly address the issue of variance that comes from the detection function. Fortunately, including this source of uncertainty comes without too much additional effort. If we use the methods described in <span class="citation" data-cites="bravington2018reliable">(<a href="#ref-bravington2018reliable" role="doc-biblioref">Bravington <em>et al.</em>, 2018</a>)</span>, we can obtain a <span class="math inline">\(\boldsymbol{V}_{\hat{\boldsymbol{\beta}}}\)</span> that includes detection function uncertainty. We can then use that <span class="math inline">\(\boldsymbol{V}_{\hat{\boldsymbol{\beta}}}\)</span> in the procedures outlined above.</p>
+</section>
+<section id="acknowledgements" class="level2">
+<h2 class="anchored" data-anchor-id="acknowledgements">Acknowledgements</h2>
+<p>This work was originally funded by OPNAV N45 and the SURTASS LFA Settlement Agreement, and being managed by the U.S. Navy’s Living Marine Resources program under Contract No.&nbsp;N39430-17-C-1982.</p>
+
+
+
+</section>
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-bravington2018reliable" class="csl-entry" role="listitem">
+Bravington, M. V., Miller, D. L. and Hedley, S. L. (2018) Reliable variance propagation for spatial density surface models., 11.
+</div>
+<div id="ref-carlin1991asample" class="csl-entry" role="listitem">
+Carlin, B. P. and Gelfand, A. E. (1991) A sample reuse method for accurate parametric empirical <span>Bayes</span> confidence intervals. <em>Journal of the Royal Statistical Society. Series B (Methodological)</em>, 189–200.
+</div>
+<div id="ref-laird1987empirical" class="csl-entry" role="listitem">
+Laird, N. M. and Louis, T. A. (1987) Empirical <span>Bayes</span> <span>Confidence</span> <span>Intervals</span> <span>Based</span> on <span>Bootstrap</span> <span>Samples</span>. <em>Journal of the American Statistical Association</em>, <strong>82</strong>, 739–750. DOI: <a href="https://doi.org/10.1080/01621459.1987.10478490">10.1080/01621459.1987.10478490</a>.
+</div>
+<div id="ref-marra2012coverage" class="csl-entry" role="listitem">
+Marra, G. and Wood, S. N. (2012) Coverage <span>Properties</span> of <span>Confidence</span> <span>Intervals</span> for <span>Generalized</span> <span>Additive</span> <span>Model</span> <span>Components</span>: <span>Coverage</span> properties of <span>GAM</span> intervals. <em>Scandinavian Journal of Statistics</em>, <strong>39</strong>, 53–74. DOI: <a href="https://doi.org/10.1111/j.1467-9469.2011.00760.x">10.1111/j.1467-9469.2011.00760.x</a>.
+</div>
+<div id="ref-marra2012modelling" class="csl-entry" role="listitem">
+Marra, G., Miller, D. L. and Zanin, L. (2012) Modelling the spatiotemporal distribution of the incidence of resident foreign population: <span>Spatiotemporal</span> <span>Smoothing</span> of <span>Resident</span> <span>Foreign</span> <span>Population</span>. <em>Statistica Neerlandica</em>, <strong>66</strong>, 133–160. DOI: <a href="https://doi.org/10.1111/j.1467-9574.2011.00500.x">10.1111/j.1467-9574.2011.00500.x</a>.
+</div>
+<div id="ref-miller2019bayesian" class="csl-entry" role="listitem">
+Miller, D. L. (2019) Bayesian views of generalized additive modelling. <em>arXiv:1902.01330 [stat]</em>. Available at: <a href="http://arxiv.org/abs/1902.01330">http://arxiv.org/abs/1902.01330</a> (accessed 23 May 2019).
+</div>
+<div id="ref-miller2013spatial" class="csl-entry" role="listitem">
+Miller, D. L., Burt, M. L., Rexstad, E. A., et al. (2013) Spatial models for distance sampling data: Recent developments and future directions. ed. O. Gimenez <em>Methods in Ecology and Evolution</em>, <strong>4</strong>, 1001–1010. DOI: <a href="https://doi.org/10.1111/2041-210X.12105">10.1111/2041-210X.12105</a>.
+</div>
+<div id="ref-nychka1988bayesian" class="csl-entry" role="listitem">
+Nychka, D. (1988) Bayesian <span>Confidence</span> <span>Intervals</span> for <span>Smoothing</span> <span>Splines</span>. <em>Journal of the American Statistical Association</em>, <strong>83</strong>, 1134. DOI: <a href="https://doi.org/10.2307/2290146">10.2307/2290146</a>.
+</div>
+<div id="ref-rubin1981thebayesian" class="csl-entry" role="listitem">
+Rubin, D. (1981) The <span>Bayesian</span> <span>Bootstrap</span>. <em>The Annals of Statistics</em>, <strong>9</strong>, 130–134.
+</div>
+<div id="ref-seber1987estimation" class="csl-entry" role="listitem">
+Seber, G. A. (1987) <em>Estimation of <span>Animal</span> <span>Abundance</span></em>. Charles <span>Griffin</span> <span>Book</span>. Oxford University Press, Incorporated. Available at: <a href="https://books.google.co.uk/books?id=iIAAPQAACAAJ">https://books.google.co.uk/books?id=iIAAPQAACAAJ</a>.
+</div>
+<div id="ref-wasserman2004allof" class="csl-entry" role="listitem">
+Wasserman, L. (2004) <em>All of <span>Statistics</span>: <span>A</span> <span>Concise</span> <span>Course</span> in <span>Statistical</span> <span>Inference</span></em>. Springer <span>Texts</span> in <span>Statistics</span>. Springer.
+</div>
+<div id="ref-wood2011faststable" class="csl-entry" role="listitem">
+Wood, S. N. (2011) Fast stable restricted maximum likelihood and marginal likelihood estimation of semiparametric generalized linear models. <em>Journal of the Royal Statistical Society: Series B (Statistical Methodology)</em>, <strong>73</strong>, 3–36.
+</div>
+<div id="ref-wood2017generalized" class="csl-entry" role="listitem">
+Wood, S. N. (2017) <em>Generalized <span>Additive</span> <span>Models</span>. <span>An</span> <span>Introduction</span> with <span>R</span></em>. 2nd ed. Texts in <span>Statistical</span> <span>Science</span>. CRC Press.
+</div>
+<div id="ref-wood2016smoothing" class="csl-entry" role="listitem">
+Wood, S. N., Pya, N. and Säfken, B. (2016) Smoothing <span>Parameter</span> and <span>Model</span> <span>Selection</span> for <span>General</span> <span>Smooth</span> <span>Models</span>. <em>Journal of the American Statistical Association</em>, <strong>111</strong>, 1548–1563. DOI: <a href="https://doi.org/10.1080/01621459.2016.1180986">10.1080/01621459.2016.1180986</a>.
+</div>
+</div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
