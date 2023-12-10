@@ -55,7 +55,26 @@ div.sourceCode
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-</style>
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="../site_libs/quarto-nav/quarto-nav.js"></script>
@@ -94,7 +113,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<!-- thanks to Eli Holmes for this trick! https://github.com/quarto-dev/quarto-cli/issues/2275 -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: {autoNumber: "AMS"} },
+  tex2jax: {inlineMath: [ ['$','$'], ["\\(","\\)"] ]}
+});
+</script>
 
+<!-- This is what works with Quarto -->
+<script>
+  MathJax = {
+    tex: {
+      tags: 'ams'  // should be 'ams', 'none', or 'all'
+    }
+  };
+</script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -155,7 +192,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- sidebar -->
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#a-general-algorithm" id="toc-a-general-algorithm" class="nav-link active" data-scroll-target="#a-general-algorithm">A general algorithm</a></li>
+  <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a>
+  <ul class="collapse">
+  <li><a href="#example-1---normal-response" id="toc-example-1---normal-response" class="nav-link" data-scroll-target="#example-1---normal-response">Example 1 - normal response</a></li>
+  </ul></li>
+  <li><a href="#example-2---tweedie-response-with-multiple-smooths" id="toc-example-2---tweedie-response-with-multiple-smooths" class="nav-link" data-scroll-target="#example-2---tweedie-response-with-multiple-smooths">Example 2 - Tweedie response with multiple smooths</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -183,17 +231,49 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<p>Based on https://stat.ethz.ch/pipermail/r-help/2011-April/275632.html</p>
+<p>We can make two kinds of predictions from our model [<span class="citation" data-cites="farawayPracticalRegressionAnova">Faraway (<a href="#ref-farawayPracticalRegressionAnova" role="doc-biblioref">2002</a>)</span>; Section 3.5]:</p>
+<ol type="1">
+<li>predictions about the “average” (“if we have some set of covariates, what is the average response given those covariates?”) – <em>mean future predictions</em></li>
+<li>predictions about specific situation (“we have some set of covariates, what is it’s prediction”) – <em>predictions of future observations</em></li>
+</ol>
+<p>In both cases the mean effect will be the same (so we can simply use the output from <code>predict(model)</code> <em>but</em> there are differences in how to calculate the uncertainty. In the latter case we need to include the additional variance from the error term in the model (usually denoted <span class="math inline">\(\epsilon\)</span>). We call this second case a <a href="https://en.wikipedia.org/wiki/Prediction_interval">prediction interval</a>.</p>
+<p>Thinking about the normal response case (ignoring link functions etc for now), if we can write down the linear predictor of our model as <span class="math inline">\(\boldsymbol{X}\boldsymbol{\beta}\)</span>, we want <span class="math inline">\(\text{Var}(\boldsymbol{X}\boldsymbol{\beta})\)</span> in case 1. above. For case 2. we have the prediction as <span class="math inline">\(\boldsymbol{X}\boldsymbol{\beta} + \epsilon\)</span>. <span class="math inline">\(\mathbf{E}(\epsilon) = 0\)</span>, so we ignore this for the mean effect, but we need to take <span class="math inline">\(\epsilon\)</span> into account.</p>
+<p>More generally, we want to take into account uncertainty from the various hyperparameters of the response distribution, like scale, shape etc.</p>
+<p>It’s simplest to show this via <a href="../articles/gamvar.html#posterior-simulation">posterior simulation</a>, so that’s what is used here.</p>
+<section id="a-general-algorithm" class="level1">
+<h1>A general algorithm</h1>
+<p>We start with the posterior simulation template, so first let’s define some terms. <span class="math inline">\(\mathbf{X}_{p}\)</span> is the matrix that maps parameters to their predictions on the linear predictor scale (the “<span class="math inline">\(L_p\)</span> matrix” or “projection matrix”). <span class="math inline">\(\boldsymbol{\beta}}\)</span> is the vector of parameters from our fitted model and <span class="math inline">\(\mathbf{V}_{\hat{\boldsymbol{\beta}}}\)</span> is its corresponding variance-covariance matrix. It’s also worth remembering that <span class="math inline">\(\boldsymbol{\beta}}\)</span> is approximately normally distributed (it’s exact for normal response), so we can use the multivariate normal distribution to generate <span class="math inline">\(\boldsymbol{\beta}}\)</span>s that are consistent with our model.</p>
+<p>Regular posterior simulation is as follows:</p>
+<ol type="1">
+<li>For <span class="math inline">\(b=1,\ldots,B\)</span>:</li>
+<li>Simulate from <span class="math inline">\(N(\hat{\boldsymbol{\beta}},\mathbf{V}_{\hat{\boldsymbol{\beta}}})\)</span>, to obtain <span class="math inline">\(\boldsymbol{\beta}_{b}\)</span>.</li>
+<li>Calculate prediction <span class="math inline">\(Y^*_b=\mathbf{1}g^{-1}\left(\mathbf{X}_{p}\boldsymbol{\beta}_{b}\right)\)</span></li>
+<li>Store <span class="math inline">\(Y_b^*\)</span>.</li>
+<li>Calculate the empirical variance or percentiles of the <span class="math inline">\(Y_b^*\)</span>s.</li>
+</ol>
+<p>Now, to create a prediction interval, we adapt as follows:</p>
+<ol type="1">
+<li>For <span class="math inline">\(b=1,\ldots,B\)</span>:</li>
+<li>Simulate from <span class="math inline">\(N(\hat{\boldsymbol{\beta}},\mathbf{V}_{\hat{\boldsymbol{\beta}}})\)</span>, to obtain <span class="math inline">\(\boldsymbol{\beta}_{b}\)</span>.</li>
+<li>Calculate prediction <span class="math inline">\(Y^*_b=\mathbf{1}g^{-1}\left(\mathbf{X}_{p}\boldsymbol{\beta}_{b}\right)\)</span></li>
+<li>Generate a random deviate from the response family with mean <span class="math inline">\(Y_b^*\)</span> and other (hyper)parameters from the fitted model (scale, etc) to obtain <span class="math inline">\(Y^\dagger_b\)</span>.</li>
+<li>Calculate the empirical variance or percentiles of the <span class="math inline">\(Y_b^\dagger\)</span>s.</li>
+</ol>
+<p>Our addition here is at point 3, generating random deviates from the response family. In the normal case, this just corresponds to generating using <code>rnorm</code>, mean generated from the simulated predictions and the variance using the estimated scale parameter (<code>model$scale</code>). For other distributions it may involve fewer scale parameters (e.g., Poisson) or more (e.g., Gamma).</p>
+</section>
+<section id="examples" class="level1">
+<h1>Examples</h1>
+<p>The following code is adapted from <a href="https://stat.ethz.ch/pipermail/r-help/2011-April/275632.html">this <code>r-help</code> mailing list post</a> by Simon Wood with added comments for clarity.</p>
+<section id="example-1---normal-response" class="level2">
+<h2 class="anchored" data-anchor-id="example-1---normal-response">Example 1 - normal response</h2>
+<p>For the first example, we’ll simulate some normally-distributed data using the <code>gamSim</code> function in <code>mgcv</code>, but only use one predictor, for simplicity.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Prediction interval example for a GAM</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># based on https://stat.ethz.ch/pipermail/r-help/2011-April/275632.html</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Loading required package: nlme</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>This is mgcv 1.9-1. For overview type 'help("mgcv-package")'.</code></pre>
+<pre><code>This is mgcv 1.9-0. For overview type 'help("mgcv-package")'.</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="do">## simulate some data...</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">8</span>)</span>
@@ -202,65 +282,199 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>Gu &amp; Wahba 4 term additive model</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># just want one predictor here to make y just f2 + noise</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>dat<span class="sc">$</span>y <span class="ot">&lt;-</span> dat<span class="sc">$</span>f2 <span class="sc">+</span> <span class="fu">rnorm</span>(<span class="dv">400</span>, <span class="dv">0</span>, <span class="dv">1</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="do">## fit smooth model to x, y data...</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">gam</span>(y<span class="sc">~</span><span class="fu">s</span>(x2,<span class="at">k=</span><span class="dv">20</span>), <span class="at">method=</span><span class="st">"REML"</span>, <span class="at">data=</span>dat)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="do">## simulate replicate beta vectors from posterior...</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>n.rep <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>br <span class="ot">&lt;-</span> <span class="fu">rmvn</span>(n.rep, <span class="fu">coef</span>(b), <span class="fu">vcov</span>(b))</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="do">## turn these into replicate smooths</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>xp <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out=</span><span class="dv">200</span>)</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># this is the "Lp matrix" which maps the coefficients to the predictors</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co"># you can think of it like the design matrix but for the predictions</span></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>Xp <span class="ot">&lt;-</span> <span class="fu">predict</span>(b, <span class="at">newdata=</span><span class="fu">data.frame</span>(<span class="at">x2=</span>xp), <span class="at">type=</span><span class="st">"lpmatrix"</span>)</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co"># note that we should apply the link function here if we have one</span></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co"># this is now a matrix with n.rep replicate smooths over length(xp) locations</span></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>fv <span class="ot">&lt;-</span> Xp<span class="sc">%*%</span><span class="fu">t</span>(br)</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="co"># now simulate from normal deviates with mean as in fv</span></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co"># and estimated scale...</span></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="co"># (can replace rnorm at this point with the distribution of the data we're</span></span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="co">#  using in a given example)</span></span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>yr <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="fu">length</span>(fv), fv, b<span class="sc">$</span>scale), <span class="fu">nrow</span>(fv), <span class="fu">ncol</span>(fv))</span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="co"># now make some plots</span></span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="co"># plot the replicates in yr</span></span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">rep</span>(xp, n.rep), yr, <span class="at">pch=</span><span class="st">"."</span>)</span>
-<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a><span class="co"># and the data we used to fit the model</span></span>
-<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a><span class="fu">points</span>(dat<span class="sc">$</span>x2, dat<span class="sc">$</span>y, <span class="at">pch=</span><span class="dv">19</span>, <span class="at">cex=</span>.<span class="dv">5</span>)</span>
-<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a><span class="co"># compute 95% prediction interval</span></span>
-<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a><span class="co"># since yr is a matrix where each row is a data location along x2 and</span></span>
-<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a><span class="co"># each column is a replicate we want the quantiles over the rows, summarizing</span></span>
-<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a><span class="co"># the replicates each time</span></span>
-<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>PI <span class="ot">&lt;-</span> <span class="fu">apply</span>(yr, <span class="dv">1</span>, quantile, <span class="at">prob=</span><span class="fu">c</span>(.<span class="dv">025</span>,<span class="fl">0.975</span>))</span>
-<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a><span class="co"># the result has the 2.5% bound in the first row and the 97.5% bound</span></span>
-<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a><span class="co"># in the second</span></span>
-<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a><span class="co"># we can then plot those two bounds</span></span>
-<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(xp, PI[<span class="dv">1</span>,], <span class="at">col=</span><span class="dv">2</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span>
-<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(xp, PI[<span class="dv">2</span>,], <span class="at">col=</span><span class="dv">2</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span>
-<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a><span class="co"># and optionally add the confidence interval for comparison...</span></span>
-<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(b, <span class="at">newdata=</span><span class="fu">data.frame</span>(<span class="at">x2=</span>xp), <span class="at">se=</span><span class="cn">TRUE</span>)</span>
-<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(xp, pred<span class="sc">$</span>fit, <span class="at">col=</span><span class="dv">3</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span>
-<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>u.ci <span class="ot">&lt;-</span> pred<span class="sc">$</span>fit <span class="sc">+</span> <span class="dv">2</span><span class="sc">*</span>pred<span class="sc">$</span>se.fit</span>
-<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a>l.ci <span class="ot">&lt;-</span> pred<span class="sc">$</span>fit <span class="sc">-</span> <span class="dv">2</span><span class="sc">*</span>pred<span class="sc">$</span>se.fit</span>
-<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(xp, u.ci, <span class="at">col=</span><span class="dv">3</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span>
-<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(xp, l.ci, <span class="at">col=</span><span class="dv">3</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>dat<span class="sc">$</span>y <span class="ot">&lt;-</span> dat<span class="sc">$</span>f2 <span class="sc">+</span> <span class="fu">rnorm</span>(<span class="dv">400</span>, <span class="dv">0</span>, <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can then fit an extremely boring model to this data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="do">## fit smooth model to x, y data...</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">gam</span>(y<span class="sc">~</span><span class="fu">s</span>(x2,<span class="at">k=</span><span class="dv">20</span>), <span class="at">method=</span><span class="st">"REML"</span>, <span class="at">data=</span>dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now to the central bit of the problem</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="do">## simulate replicate beta vectors from posterior...</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>n.rep <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>br <span class="ot">&lt;-</span> <span class="fu">rmvn</span>(n.rep, <span class="fu">coef</span>(b), <span class="fu">vcov</span>(b))</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="do">## turn these into replicate smooths</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>xp <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out=</span><span class="dv">200</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="co"># this is the "Lp matrix" which maps the coefficients to the predictors</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co"># you can think of it like the design matrix but for the predictions</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>Xp <span class="ot">&lt;-</span> <span class="fu">predict</span>(b, <span class="at">newdata=</span><span class="fu">data.frame</span>(<span class="at">x2=</span>xp), <span class="at">type=</span><span class="st">"lpmatrix"</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="co"># note that we should apply the link function here if we have one</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="co"># this is now a matrix with n.rep replicate smooths over length(xp) locations</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>fv <span class="ot">&lt;-</span> Xp<span class="sc">%*%</span><span class="fu">t</span>(br)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="co"># now simulate from normal deviates with mean as in fv</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="co"># and estimated scale...</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>yr <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="fu">length</span>(fv), fv, b<span class="sc">$</span>scale), <span class="fu">nrow</span>(fv), <span class="fu">ncol</span>(fv))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>now make some plots</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot the replicates in yr</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">rep</span>(xp, n.rep), yr, <span class="at">pch=</span><span class="st">"."</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># and the data we used to fit the model</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">points</span>(dat<span class="sc">$</span>x2, dat<span class="sc">$</span>y, <span class="at">pch=</span><span class="dv">19</span>, <span class="at">cex=</span>.<span class="dv">5</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># compute 95% prediction interval</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co"># since yr is a matrix where each row is a data location along x2 and</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co"># each column is a replicate we want the quantiles over the rows, summarizing</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co"># the replicates each time</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>PI <span class="ot">&lt;-</span> <span class="fu">apply</span>(yr, <span class="dv">1</span>, quantile, <span class="at">prob=</span><span class="fu">c</span>(.<span class="dv">025</span>,<span class="fl">0.975</span>))</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co"># the result has the 2.5% bound in the first row and the 97.5% bound</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co"># in the second</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="co"># we can then plot those two bounds</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(xp, PI[<span class="dv">1</span>,], <span class="at">col=</span><span class="dv">2</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(xp, PI[<span class="dv">2</span>,], <span class="at">col=</span><span class="dv">2</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="co"># and optionally add the confidence interval for comparison...</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(b, <span class="at">newdata=</span><span class="fu">data.frame</span>(<span class="at">x2=</span>xp), <span class="at">se=</span><span class="cn">TRUE</span>)</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(xp, pred<span class="sc">$</span>fit, <span class="at">col=</span><span class="dv">3</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>u.ci <span class="ot">&lt;-</span> pred<span class="sc">$</span>fit <span class="sc">+</span> <span class="dv">2</span><span class="sc">*</span>pred<span class="sc">$</span>se.fit</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>l.ci <span class="ot">&lt;-</span> pred<span class="sc">$</span>fit <span class="sc">-</span> <span class="dv">2</span><span class="sc">*</span>pred<span class="sc">$</span>se.fit</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(xp, u.ci, <span class="at">col=</span><span class="dv">3</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(xp, l.ci, <span class="at">col=</span><span class="dv">3</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="prediction_intervals_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="672"></p>
+<p><img src="prediction_intervals_files/figure-html/ex1-plotit-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="example-2---tweedie-response-with-multiple-smooths" class="level1">
+<h1>Example 2 - Tweedie response with multiple smooths</h1>
+<p>In this case we’re not going to plot smooths, but look at the prediction interval around a couple of predictions, to show that this method is very flexible.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># taken from ?mgcv::tw</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">3</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">400</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="do">## Simulate data...</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">gamSim</span>(<span class="dv">1</span>, <span class="at">n=</span>n, <span class="at">dist=</span><span class="st">"poisson"</span>, <span class="at">scale=</span>.<span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Gu &amp; Wahba 4 term additive model</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># using 2 terms to create the response</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>dat<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">rTweedie</span>(<span class="fu">exp</span>(dat<span class="sc">$</span>x2 <span class="sc">+</span> dat<span class="sc">$</span>x1), <span class="at">p=</span><span class="fl">1.3</span>, <span class="at">phi=</span>.<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can then fit an extremely boring model to this data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>b2 <span class="ot">&lt;-</span> <span class="fu">gam</span>(y<span class="sc">~</span><span class="fu">s</span>(x2)<span class="sc">+</span><span class="fu">s</span>(x1), <span class="at">family=</span><span class="fu">tw</span>(), <span class="at">data=</span>dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="do">## simulate replicate beta vectors from posterior...</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>n.rep <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>br <span class="ot">&lt;-</span> <span class="fu">rmvn</span>(n.rep, <span class="fu">coef</span>(b2), <span class="fu">vcov</span>(b2))</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="do">## turn these into replicate smooths</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co"># here our prediction grid includes all variables, all of which are</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co"># over 0,1</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>xp <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.8</span>)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>xp <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">x2=</span>xp, <span class="at">x1=</span>xp)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co"># build the Lp matrix</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>Xp <span class="ot">&lt;-</span> <span class="fu">predict</span>(b2, <span class="at">newdata=</span>xp, <span class="at">type=</span><span class="st">"lpmatrix"</span>)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="co"># this is now a matrix with n.rep replicate smooths over length(xp)</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="co"># locations. Exponentiate to put on the response scale.</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>fv <span class="ot">&lt;-</span> <span class="fu">exp</span>(Xp<span class="sc">%*%</span><span class="fu">t</span>(br))</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="co"># now simulate from Tweedie deviates with mean exp(fv) (log link!),</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="co"># scale and power parameter from the model</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>yr <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rTweedie</span>(fv, <span class="at">phi=</span>b2<span class="sc">$</span>scale, <span class="at">p=</span>b2<span class="sc">$</span>family<span class="sc">$</span><span class="fu">getTheta</span>(<span class="cn">TRUE</span>)),</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>             <span class="fu">nrow</span>(fv), <span class="fu">ncol</span>(fv))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now let’s calculate some intervals:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># compute 95% prediction interval</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>PI <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">apply</span>(yr, <span class="dv">1</span>, quantile, <span class="at">prob=</span><span class="fu">c</span>(.<span class="dv">025</span>,<span class="fl">0.975</span>)))</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co"># make regular predictions as usual</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(b2, <span class="at">newdata=</span>xp, <span class="at">se=</span><span class="cn">TRUE</span>)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>tw_tab <span class="ot">&lt;-</span> <span class="fu">cbind.data.frame</span>(<span class="at">prediction =</span> pred<span class="sc">$</span>fit,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">lci =</span> pred<span class="sc">$</span>fit <span class="sc">-</span> <span class="fl">1.96</span><span class="sc">*</span>pred<span class="sc">$</span>se.fit,</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>                <span class="at">uci =</span> pred<span class="sc">$</span>fit <span class="sc">+</span> <span class="fl">1.96</span><span class="sc">*</span>pred<span class="sc">$</span>se.fit,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>                PI)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can put these in a table, here <code>uci</code>/<code>lci</code> are confidence intervals, <code>2.5%</code>/<code>97.5%</code> indicate the prediction intervals, which are much wider.</p>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(tw_tab)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">prediction</th>
+<th style="text-align: right;">lci</th>
+<th style="text-align: right;">uci</th>
+<th style="text-align: right;">2.5%</th>
+<th style="text-align: right;">97.5%</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.3192804</td>
+<td style="text-align: right;">0.2245227</td>
+<td style="text-align: right;">0.4140381</td>
+<td style="text-align: right;">0.0876474</td>
+<td style="text-align: right;">3.308658</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.9439441</td>
+<td style="text-align: right;">0.8548857</td>
+<td style="text-align: right;">1.0330024</td>
+<td style="text-align: right;">0.5542651</td>
+<td style="text-align: right;">5.344012</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.9633439</td>
+<td style="text-align: right;">0.8785245</td>
+<td style="text-align: right;">1.0481634</td>
+<td style="text-align: right;">0.5704890</td>
+<td style="text-align: right;">5.481655</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1.5880076</td>
+<td style="text-align: right;">1.5171131</td>
+<td style="text-align: right;">1.6589022</td>
+<td style="text-align: right;">1.6188095</td>
+<td style="text-align: right;">9.041003</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Alternatively a plot shows this well:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co"># a little manipulation to get this right</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>tw_tab_plot <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">prediction =</span> <span class="fu">rep</span>(tw_tab<span class="sc">$</span>prediction, <span class="dv">2</span>),</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>                          <span class="at">lci =</span> <span class="fu">c</span>(tw_tab<span class="sc">$</span>lci, tw_tab[[<span class="st">"2.5%"</span>]]),</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>                          <span class="at">uci =</span> <span class="fu">c</span>(tw_tab<span class="sc">$</span>uci, tw_tab[[<span class="st">"97.5%"</span>]]),</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>                          <span class="at">type =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"Confidence"</span>, <span class="st">"Prediction"</span>), <span class="at">each=</span><span class="dv">4</span>),</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>                          <span class="at">id =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, <span class="dv">2</span>))</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data=</span>tw_tab_plot, <span class="fu">aes</span>(<span class="at">x=</span>id, <span class="at">group=</span>type, <span class="at">colour=</span>type)) <span class="sc">+</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_linerange</span>(<span class="fu">aes</span>(<span class="at">y=</span>prediction, <span class="at">ymin=</span>lci, <span class="at">ymax=</span>uci),</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>                 <span class="at">position=</span><span class="fu">position_dodge2</span>(<span class="at">width=</span><span class="fl">0.5</span>)) <span class="sc">+</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">y=</span>prediction), <span class="at">position=</span><span class="fu">position_dodge2</span>(<span class="at">width=</span><span class="fl">0.5</span>)) <span class="sc">+</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y=</span><span class="st">"Value"</span>, <span class="at">x=</span><span class="st">"Prediction number"</span>, <span class="at">colour=</span><span class="st">"Interval type"</span>) <span class="sc">+</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="prediction_intervals_files/figure-html/plotex2-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 
 
 
-</main> <!-- /main -->
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-farawayPracticalRegressionAnova" class="csl-entry" role="listitem">
+Faraway, J. J. (2002) Practical <span>Regression</span> and <span>Anova</span> using <span>R</span>.
+</div>
+</div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {

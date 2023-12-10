@@ -1,27 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://calgary.converged.yt/about.html</loc>
-    <lastmod>2023-12-04T15:02:55.100Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/articles/prediction_intervals.html</loc>
-    <lastmod>2023-12-04T15:02:51.408Z</lastmod>
+    <loc>https://calgary.converged.yt/articles/gamvar.html</loc>
+    <lastmod>2023-12-10T09:02:09.413Z</lastmod>
   </url>
   <url>
     <loc>https://calgary.converged.yt/contributing.html</loc>
-    <lastmod>2023-12-04T15:02:44.092Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/references.html</loc>
-    <lastmod>2023-12-04T15:02:43.820Z</lastmod>
+    <lastmod>2023-12-10T09:01:09.989Z</lastmod>
   </url>
   <url>
     <loc>https://calgary.converged.yt/index.html</loc>
-    <lastmod>2023-12-04T15:02:44.352Z</lastmod>
+    <lastmod>2023-12-10T09:01:08.753Z</lastmod>
   </url>
   <url>
-    <loc>https://calgary.converged.yt/articles/gamvar.html</loc>
-    <lastmod>2023-12-04T15:02:54.712Z</lastmod>
+    <loc>https://calgary.converged.yt/about.html</loc>
+    <lastmod>2023-12-10T09:01:09.601Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/articles/prediction_intervals.html</loc>
+    <lastmod>2023-12-10T09:01:24.793Z</lastmod>
   </url>
 </urlset>

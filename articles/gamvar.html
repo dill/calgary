@@ -279,7 +279,7 @@ n_{m}^{*}=\exp\left(\log_{e}A_{m}+\beta_{0}+f_{\text{space}}(\texttt{lat}_{m},\t
 <pre><code>Loading required package: nlme</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>This is mgcv 1.9-1. For overview type 'help("mgcv-package")'.</code></pre>
+<pre><code>This is mgcv 1.9-0. For overview type 'help("mgcv-package")'.</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="do">## simulate some data...</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2</span>)</span>
@@ -393,7 +393,7 @@ n_{m}^{*}=\exp\left(\log_{e}A_{m}+\beta_{0}+f_{\text{space}}(\texttt{lat}_{m},\t
 <span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>Nhat <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">predict</span>(m, predgrid))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Models fitted by <code>dsm</code> are GAMs (the <code>dsm</code> function just calls <code>gam</code>, prior to that it’s just doing some data manipulation), so the techniques described above can be used for them, as well as for any GAM (though see Discussion for further extensions). Ignoring goodness-of-fit, model assessment and so forth for now, we can move on to making the calculations above in code.</p>
-<div class="cell" data-hash="gamvar_cache/html/fig-spermwhale-data_b2b70ebc5aa30d1cd250cdd2b2b995ec">
+<div class="cell" data-hash="gamvar_cache/html/fig-spermwhale-data_5da5f1bb74bb96d26e2c383d0872ef88">
 <div class="cell-output-display">
 <div id="fig-spermwhale-data" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
@@ -481,7 +481,7 @@ n_{m}^{*}=\exp\left(\log_{e}A_{m}+\beta_{0}+f_{\text{space}}(\texttt{lat}_{m},\t
 </div>
 </div>
 <p>Note that here we see that the CV (and standard error) is a little larger than for the delta method. In part because of the link function making extreme values more extreme (but only in one direction). We could get around this by implementing some kind of importance (or Metropolis-Hastings) sampler, ensuring that more values are sampled near “realistic” values or simply by increasing <code>nsamp</code>. Since we are sampling from a multivariate normal, the procedure is relatively fast and we can afford to make <code>nsamp</code> relatively large. The likely bottleneck in the code is the matrix multiplication when the two line method is used.</p>
-<div class="cell" data-hash="gamvar_cache/html/fig-spermwhale-hist_4a8ff04e17860f17c6a4a0611b9a08f3">
+<div class="cell" data-hash="gamvar_cache/html/fig-spermwhale-hist_0a0de899ecd5176cccc75483120f6def">
 <div class="cell-output-display">
 <div id="fig-spermwhale-hist" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
