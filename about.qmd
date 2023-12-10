@@ -6,6 +6,8 @@ title: "About"
 
 There's lots of information out there about things you can do with `mgcv` but they're all in different places (some of those places are "my hard drive"), so I thought it would be useful to collect them here for folks to be able to use.
 
+
+
 # Who?
 
 I'm [Dave Miller](https://converged.yt). I work at [Biomathematics and Statistics Scotland](http://www.bioss.ac.uk) and the [UK Centre for Ecology and Hydrology](http://www.ceh.ac.uk). I first started working with `mgcv` sometime around 2007.
