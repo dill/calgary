@@ -26,7 +26,7 @@ It's simplest to show this via [posterior simulation](gamvar.qmd#posterior-simul
 
 # A general algorithm
 
-We start with the posterior simulation template, so first let's define some terms. $\mathbf{X}_{p}$ is the matrix that maps parameters to their predictions on the linear predictor scale (the "$L_p$ matrix" or "projection matrix"). $\boldsymbol{\beta}}$ is the vector of parameters from our fitted model and $\mathbf{V}_{\hat{\boldsymbol{\beta}}}$ is its corresponding variance-covariance matrix. It's also worth remembering that $\boldsymbol{\beta}}$ is approximately normally distributed (it's exact for normal response), so we can use the multivariate normal distribution to generate $\boldsymbol{\beta}}$s that are consistent with our model.
+We start with the posterior simulation template, so first let's define some terms. $\mathbf{X}_{p}$ is the matrix that maps parameters to their predictions on the linear predictor scale (the "$L_p$ matrix" or "projection matrix"). $\boldsymbol{\beta}$ is the vector of parameters from our fitted model and $\mathbf{V}_{\hat{\boldsymbol{\beta}}}$ is its corresponding variance-covariance matrix. It's also worth remembering that $\boldsymbol{\beta}$ is approximately normally distributed (it's exact for normal response), so we can use the multivariate normal distribution to generate $\boldsymbol{\beta}$s that are consistent with our model.
 
 Regular posterior simulation is as follows:
 
