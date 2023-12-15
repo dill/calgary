@@ -70,18 +70,18 @@
     "text": "Yaaaay!\nYou have an example of a thing you can do in mgcv? You’d like to share that? That’s awesome.\nThe easiest way to do that is to submit a pull request to the site github or suggest a topic via the issue tracker."
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Yes! You can do that in mgcv",
-    "section": "",
-    "text": "This is a website about the kinds of things you can do in mgcv that you might not have realised that you can do in mgcv.\nHere are some possible topics:\n\nPoisson process fitting\ncross-validation\nstochastic partial differential equation smoothing\ncapture-recapture (I think?)\nbeing a secret Bayesian and being a more obvious Bayesian\n\nwith bonus material on:\n\nhow to do things not in mgcv (how to import mgcv smoothers into other models/frameworks/software)"
-  },
-  {
     "objectID": "about.html",
     "href": "about.html",
     "title": "About",
     "section": "",
     "text": "Why?\nThere’s lots of information out there about things you can do with mgcv but they’re all in different places (some of those places are “my hard drive”), so I thought it would be useful to collect them here for folks to be able to use.\n\n\nWho?\nI’m Dave Miller. I work at Biomathematics and Statistics Scotland and the UK Centre for Ecology and Hydrology. I first started working with mgcv sometime around 2007."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Yes! You can do that in mgcv",
+    "section": "",
+    "text": "This is a website about the kinds of things you can do in mgcv that you might not have realised that you can do in mgcv.\nHere are some possible topics:\n\nPoisson process fitting\ncross-validation\nstochastic partial differential equation smoothing\ncapture-recapture (I think?)\nbeing a secret Bayesian and being a more obvious Bayesian\n\nwith bonus material on:\n\nhow to do things not in mgcv (how to import mgcv smoothers into other models/frameworks/software)"
   },
   {
     "objectID": "articles/prediction_intervals.html",
