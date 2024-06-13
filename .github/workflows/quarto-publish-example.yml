@@ -42,6 +42,7 @@ jobs:
             any::ggplot2
             any::dsm
             any::Distance
+            any::fmesher
 
       # From https://github.com/julia-actions/setup-julia
       # - name: Setup Julia
