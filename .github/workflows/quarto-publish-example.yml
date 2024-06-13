@@ -43,6 +43,7 @@ jobs:
             any::dsm
             any::Distance
             any::fmesher
+            any::spatstat.data
 
       # From https://github.com/julia-actions/setup-julia
       # - name: Setup Julia
