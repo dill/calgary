@@ -1,27 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://calgary.converged.yt/contributing.html</loc>
-    <lastmod>2024-06-13T18:23:58.468Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/articles/poisson_processes.html</loc>
-    <lastmod>2024-06-13T18:23:58.464Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/index.html</loc>
-    <lastmod>2024-06-13T18:23:58.468Z</lastmod>
-  </url>
-  <url>
     <loc>https://calgary.converged.yt/about.html</loc>
-    <lastmod>2024-06-13T18:23:58.464Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/articles/gamvar.html</loc>
-    <lastmod>2024-06-13T18:23:58.464Z</lastmod>
+    <lastmod>2024-07-02T07:26:48.661Z</lastmod>
   </url>
   <url>
     <loc>https://calgary.converged.yt/articles/prediction_intervals.html</loc>
-    <lastmod>2024-06-13T18:23:58.468Z</lastmod>
+    <lastmod>2024-07-02T07:26:48.661Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/articles/gamvar.html</loc>
+    <lastmod>2024-07-02T07:26:48.661Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/contributing.html</loc>
+    <lastmod>2024-07-02T07:26:48.665Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/articles/ncv.html</loc>
+    <lastmod>2024-07-02T07:26:48.661Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/articles/poisson_processes.html</loc>
+    <lastmod>2024-07-02T07:26:48.661Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/index.html</loc>
+    <lastmod>2024-07-02T07:26:48.665Z</lastmod>
   </url>
 </urlset>

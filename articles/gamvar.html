@@ -2,13 +2,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.4.555">
+<meta name="generator" content="quarto-1.5.52">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="David L Miller">
 
-<title>Yes! You can do that in mgcv! - Model parameter uncertainty estimation approaches for generalized additive models</title>
+<title>Model parameter uncertainty estimation approaches for generalized additive models – Yes! You can do that in mgcv!</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -34,7 +34,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -137,7 +137,7 @@ MathJax.Hub.Config({
   };
 </script>
 
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <script type="text/javascript">
@@ -182,7 +182,7 @@ window.Quarto = {
     </a>
   </div>
             <div id="quarto-search" class="" title="Search"></div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
@@ -200,7 +200,7 @@ window.Quarto = {
 <span class="menu-text">Contributing material</span></a>
   </li>  
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-articles" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-articles" role="link" data-bs-toggle="dropdown" aria-expanded="false">
  <span class="menu-text">Articles</span>
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-articles">    
@@ -212,11 +212,19 @@ window.Quarto = {
     <a class="dropdown-item" href="../articles/prediction_intervals.html">
  <span class="dropdown-text">Prediction intervals</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../articles/poisson_processes.html">
+ <span class="dropdown-text">Poisson processes in <code>mgcv</code></span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../articles/ncv.html">
+ <span class="dropdown-text">Neighbourhood cross-validation</span></a>
+  </li>  
     </ul>
   </li>
 </ul>
           </div> <!-- /navcollapse -->
-          <div class="quarto-navbar-tools">
+            <div class="quarto-navbar-tools">
 </div>
       </div> <!-- /container-fluid -->
     </nav>
@@ -379,7 +387,7 @@ n_{m}^{*}=\exp\left(\log_{e}A_{m}+\beta_{0}+f_{\text{space}}(\texttt{lat}_{m},\t
 <p>We can also use the fact that fitting a GAM in <code>mgcv</code> is an empirical Bayes procedure, so we have a posterior distribution for <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span> given the smoothing parameter estimates, <span class="math inline">\(\hat{\boldsymbol{\lambda}}\)</span>, (as described above). As an example see Figure <a href="#fig-posterior-example" class="quarto-xref">Figure&nbsp;1</a> where posterior samples of <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span> are used to construct multiple smooths, these smooths then follow the properties of the analytical estimates (based on Bayesian arguments by <span class="citation" data-cites="nychka1988bayesian">Marra and Wood (<a href="#ref-marra2012coverage" role="doc-biblioref">2012</a>)</span>). As can be seen from the plot, the generated grey curves mostly lie within the <span class="math inline">\(\pm2\)</span> standard error dashed lines.</p>
 <div class="cell">
 <div class="cell-output-display">
-<div id="fig-posterior-example" class="quarto-figure quarto-figure-center quarto-float anchored">
+<div id="fig-posterior-example" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-posterior-example-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="gamvar_files/figure-html/fig-posterior-example-1.png" class="img-fluid figure-img" width="672">
@@ -435,7 +443,7 @@ Figure&nbsp;1: Fitted model (black lines) with confidence band (limits in dashed
 <p>Models fitted by <code>dsm</code> are GAMs (the <code>dsm</code> function just calls <code>gam</code>, prior to that it’s just doing some data manipulation), so the techniques described above can be used for them, as well as for any GAM (though see Discussion for further extensions). Ignoring goodness-of-fit, model assessment and so forth for now, we can move on to making the calculations above in code.</p>
 <div class="cell">
 <div class="cell-output-display">
-<div id="fig-spermwhale-data" class="quarto-figure quarto-figure-center quarto-float anchored">
+<div id="fig-spermwhale-data" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-spermwhale-data-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="gamvar_files/figure-html/fig-spermwhale-data-1.png" class="img-fluid figure-img" width="768">
@@ -527,7 +535,7 @@ Figure&nbsp;2: Plot of the sperm whale data. Each grey dot indicates the locatio
 <p>Note that here we see that the CV (and standard error) is a little larger than for the delta method. In part because of the link function making extreme values more extreme (but only in one direction). We could get around this by implementing some kind of importance (or Metropolis-Hastings) sampler, ensuring that more values are sampled near “realistic” values or simply by increasing <code>nsamp</code>. Since we are sampling from a multivariate normal, the procedure is relatively fast and we can afford to make <code>nsamp</code> relatively large. The likely bottleneck in the code is the matrix multiplication when the two line method is used.</p>
 <div class="cell">
 <div class="cell-output-display">
-<div id="fig-spermwhale-hist" class="quarto-figure quarto-figure-center quarto-float anchored">
+<div id="fig-spermwhale-hist" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-spermwhale-hist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="gamvar_files/figure-html/fig-spermwhale-hist-1.png" class="img-fluid figure-img" width="864">
@@ -633,18 +641,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
     return false;
   }
-  const clipboard = new window.ClipboardJS('.code-copy-button', {
-    text: function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-  });
-  clipboard.on('success', function(e) {
+  const onCopySuccess = function(e) {
     // button target
     const button = e.trigger;
     // don't keep focus
@@ -676,7 +673,29 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }, 1000);
     // clear code selection
     e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
   });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
     var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
     var mailtoRegex = new RegExp(/^mailto:/);
       var filterRegex = new RegExp("https:\/\/calgary\.converged\.yt");
@@ -684,7 +703,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
         return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
     }
     // Inspect non-navigation links and adorn them if external
- 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
     for (var i=0; i<links.length; i++) {
       const link = links[i];
       if (!isInternal(link.href)) {
