@@ -15,6 +15,10 @@ website:
           href: articles/gamvar.html
         - text: "Prediction intervals"
           href: articles/prediction_intervals.html
+        - text: "Poisson processes in `mgcv`"
+          href: articles/poisson_processes.html
+        - text: "Neighbourhood cross-validation"
+          href: articles/ncv.html
 
 format:
   html:
