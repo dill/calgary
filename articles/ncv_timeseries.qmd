@@ -148,7 +148,7 @@ We'll use the `pred_with_ci` function for speed in generating confidence interva
 
 ```{r gamm-fit-check}
 # install mgcvUtils
-# devtools::install_github("dill/mgcvUtils")
+devtools::install_github("dill/mgcvUtils")
 library(mgcvUtils)
 
 bal_2019 <- pred_with_ci(b1$gam, bal_2019,
