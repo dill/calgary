@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="David L Miller">
+
+<title>Neighbourhood cross-validation for time series – Yes! You can do that in mgcv!</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<!-- thanks to Eli Holmes for this trick! https://github.com/quarto-dev/quarto-cli/issues/2275 -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: {autoNumber: "AMS"} },
+  tex2jax: {inlineMath: [ ['$','$'], ["\\(","\\)"] ]}
+});
+</script>
+
+<!-- This is what works with Quarto -->
+<script>
+  MathJax = {
+    tex: {
+      tags: 'ams'  // should be 'ams', 'none', or 'all'
+    }
+  };
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">Yes! You can do that in <code>mgcv</code>!</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../contributing.html"> 
+<span class="menu-text">Contributing material</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-articles" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Articles</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-articles">    
+        <li>
+    <a class="dropdown-item" href="../articles/gamvar.html">
+ <span class="dropdown-text">GAM variance estimation</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../articles/prediction_intervals.html">
+ <span class="dropdown-text">Prediction intervals</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../articles/poisson_processes.html">
+ <span class="dropdown-text">Poisson processes in <code>mgcv</code></span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../articles/ncv.html">
+ <span class="dropdown-text">Neighbourhood cross-validation</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#i-have-a-time-series-now-im-sad" id="toc-i-have-a-time-series-now-im-sad" class="nav-link active" data-scroll-target="#i-have-a-time-series-now-im-sad">I have a time series, now I’m sad</a></li>
+  <li><a href="#lets-fit-a-dumb-model-to-one-year-and-see-whats-happening" id="toc-lets-fit-a-dumb-model-to-one-year-and-see-whats-happening" class="nav-link" data-scroll-target="#lets-fit-a-dumb-model-to-one-year-and-see-whats-happening">Let’s fit a dumb model to one year and see what’s happening</a></li>
+  <li><a href="#autoregression-via-a-gamm" id="toc-autoregression-via-a-gamm" class="nav-link" data-scroll-target="#autoregression-via-a-gamm">Autoregression via a GAMM</a></li>
+  <li><a href="#using-neighbourhood-cross-validation" id="toc-using-neighbourhood-cross-validation" class="nav-link" data-scroll-target="#using-neighbourhood-cross-validation">Using neighbourhood cross-validation</a></li>
+  <li><a href="#what-about-forward-prediction-schemes" id="toc-what-about-forward-prediction-schemes" class="nav-link" data-scroll-target="#what-about-forward-prediction-schemes">What about forward prediction schemes?</a></li>
+  <li><a href="#what-does-cross-validation-do" id="toc-what-does-cross-validation-do" class="nav-link" data-scroll-target="#what-does-cross-validation-do">What does cross-validation do?</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Neighbourhood cross-validation for time series</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>David L Miller </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">Invalid Date</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>This is the second in a series on neighbourhood cross-validation, following from the <a href="ncv.html">introductory article here</a>. The neighbourhood cross-validation fitting method is available in <code>mgcv</code> version <a href="https://cran.r-project.org/web/packages/mgcv/ChangeLog">1.9-0</a> onwards. Here I’ll focus on using cross-validation as a replacement for using autoregressive modelling structures when dealing with temporally correlated data.</p>
+<p>The primary reference for the NCV method is Simon Wood’s <a href="https://arxiv.org/html/2404.16490v1">arXiv preprint</a>.</p>
+<p>It’s important to note that I know very little about time series analysis, the focus here is on the methods we can use to fit things with NCV. There may well be much better ways to analyse these time series! Don’t yell at me.</p>
+<p>This is based on some work with BioSS colleagues: <a href="https://www.bioss.ac.uk/people/kwhyte">Katherine Whyte</a>, <a href="https://www.bioss.ac.uk/people/acouto">Ana Couto</a> and <a href="https://www.bioss.ac.uk/people/tcornulier">Thomas Cornulier</a>. Thanks to them for their input at various stages of this.</p>
+<section id="i-have-a-time-series-now-im-sad" class="level2">
+<h2 class="anchored" data-anchor-id="i-have-a-time-series-now-im-sad">I have a time series, now I’m sad</h2>
+<p>We’ll start by looking at a high-resolution time series collected by the fine folks at the UK Centre for Ecology and Hydrology<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. Data are from the COSMOS experiment, which collects soil moisture data around the UK, using literally cosmic rays (fast neutrons, see <a href="https://cosmos.ceh.ac.uk/measuring">here for more information</a>). These data are collected at about 50 sites across the UK at a temporal resolution of every 15 minutes.</p>
+<p>We will use the COSMOS-UK soil moisture data that has been aggregated at a daily resolution (mainly for computational time reasons). Note also that this is not the up-to-date version of the data, it’s based on when I downloaded it so the data ranges from mid-2014 through to the end of 2022.</p>
+<p>The measurement we’re interested in here is the “volumetric water content” (VWC) as a function of other covariates such as space and time. VWC is derived from counts of fast neutrons in the surrounding area by a cosmic-ray sensing probe.</p>
+<p>I’ve previously processed the data, <a href="https://gitlab.bioss.ac.uk/dmiller/cosmos-soil-moisture-data-processing">the script for which you can find here</a>. You can download the full, processed dataset <a href="cosmos-processed.RData">here</a>.</p>
+<p>Loading the data, we have two <code>data.frame</code>s: <code>all_sites</code> which has the full data set and <code>uk_grid</code> which is a prediction grid (which we’ll ignore here). Taking a peak at the <code>all_sites</code> data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">"cosmos-processed.RData"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(all_sites)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  SITE_ID  SITE_NAME LONGITUDE LATITUDE NORTHING EASTING ALTITUDE
+1   ALIC1 Alice Holt -0.858232 51.15355   139985  479950       80
+2   ALIC1 Alice Holt -0.858232 51.15355   139985  479950       80
+3   ALIC1 Alice Holt -0.858232 51.15355   139985  479950       80
+4   ALIC1 Alice Holt -0.858232 51.15355   139985  479950       80
+5   ALIC1 Alice Holt -0.858232 51.15355   139985  479950       80
+6   ALIC1 Alice Holt -0.858232 51.15355   139985  479950       80
+          LAND_COVER    SOIL_TYPE  DATE_TIME PRECIP SNOW_DEPTH COSMOS_VWC ndate
+1 Broadleaf woodland Mineral soil 2015-03-07    0.0         NA       40.8 16501
+2 Broadleaf woodland Mineral soil 2015-03-08    0.0         NA       42.9 16502
+3 Broadleaf woodland Mineral soil 2015-03-09    0.1         NA       38.8 16503
+4 Broadleaf woodland Mineral soil 2015-03-10    0.0         NA       45.9 16504
+5 Broadleaf woodland Mineral soil 2015-03-11    0.0         NA       39.7 16505
+6 Broadleaf woodland Mineral soil 2015-03-12    0.0         NA       42.1 16506
+  month year
+1     3 2015
+2     3 2015
+3     3 2015
+4     3 2015
+5     3 2015
+6     3 2015</code></pre>
+</div>
+</div>
+<p>We won’t confuse things by trying to deal with <a href="https://cosmos.ceh.ac.uk/network">all the sites</a> here, so let’s just select one: <a href="https://cosmos.ceh.ac.uk/sites/BALRD">Balruddery</a> (which is over the road from my office) near Dundee. Let’s take a look at that time series:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>bal <span class="ot">&lt;-</span> <span class="fu">subset</span>(all_sites, SITE_NAME<span class="sc">==</span><span class="st">"Balruddery"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal) <span class="sc">+</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ncv_timeseries_files/figure-html/select-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can also plot this as years on top of each other, to get a feeling of how similar the series is between years.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal) <span class="sc">+</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME<span class="sc">-</span><span class="fu">ymd</span>(<span class="fu">paste0</span>(year, <span class="st">"-01-01"</span>)),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">y=</span>COSMOS_VWC,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">group=</span><span class="fu">as.factor</span>(year),</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                <span class="at">colour=</span><span class="fu">as.factor</span>(year))) <span class="sc">+</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>, <span class="at">colour=</span><span class="st">"Year"</span>) <span class="sc">+</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ncv_timeseries_files/figure-html/plot-again-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can also look at <a href="https://en.wikipedia.org/wiki/Partial_autocorrelation_function">partial autocorrelation</a> plots using the built-in <code>pacf</code><a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> function in R. Plotting this for the VWC shows the autocorrelation in the data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(bal<span class="sc">$</span>COSMOS_VWC, <span class="at">lag.max=</span><span class="dv">30</span>, <span class="at">main=</span><span class="st">"Partial autocorrelogram for Balruddery"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ncv_timeseries_files/figure-html/acf-ex-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Two things to think about here: - I’ve increased <code>lag.max</code> from its default, so we can see 30 lags. - The partial autocorrelation function is the right thing to look at here (I think) because we don’t want to look at <em>every</em> lag between each time point: we really want to see the autocorrelation between a given point and future data.</p>
+</section>
+<section id="lets-fit-a-dumb-model-to-one-year-and-see-whats-happening" class="level2">
+<h2 class="anchored" data-anchor-id="lets-fit-a-dumb-model-to-one-year-and-see-whats-happening">Let’s fit a dumb model to one year and see what’s happening</h2>
+<p>Starting by looking at Balruddery in 2019, we can try to fit a “standard” GAM to the data and see what happens.</p>
+<p>Before we jump into modelling, let’s take a look at the autocorrelation in 2019 only:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># just get the 2019 data</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">subset</span>(bal, <span class="fu">year</span>(DATE_TIME) <span class="sc">==</span> <span class="dv">2019</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(bal_2019<span class="sc">$</span>COSMOS_VWC, <span class="at">lag.max=</span><span class="dv">30</span>, <span class="at">main=</span><span class="st">"Partial autocorrelogram for Balruddery 2019"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ncv_timeseries_files/figure-html/acf-ex-2019-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We’ll only use the date to explain the model. The <code>ndate</code> variable is a numeric version of the date information.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>b0 <span class="ot">&lt;-</span> <span class="fu">gam</span>(COSMOS_VWC <span class="sc">~</span> <span class="fu">s</span>(ndate, <span class="at">k=</span><span class="dv">20</span>), <span class="at">data=</span>bal_2019, <span class="at">method=</span><span class="st">"REML"</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(b0)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Family: gaussian 
+Link function: identity 
+
+Formula:
+COSMOS_VWC ~ s(ndate, k = 20)
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  32.2112     0.1259   255.9   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+           edf Ref.df     F p-value    
+s(ndate) 14.87  17.11 22.55  &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.517   Deviance explained = 53.7%
+-REML = 865.23  Scale est. = 5.7842    n = 365</code></pre>
+</div>
+</div>
+<p>Note that I’ve bumped-up the maximum basis size. I could have increased it a lot more for this basic GAM, since it’s trying to fit to all that variation in the data. This is one of the many issues with fitting a “simple” model to this kind of high-resolution time series data – our usual ideas of how to increase complexity don’t make sense. We want to get to the underlying pattern for the year, rather than getting hung-up on short-scale phenomena.</p>
+<p>Check plots show pretty good behaviour:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gam.check</span>(b0)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ncv_timeseries_files/figure-html/dumb-check-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Method: REML   Optimizer: outer newton
+full convergence after 6 iterations.
+Gradient range [-2.903424e-06,1.933717e-07]
+(score 865.2256 &amp; scale 5.784242).
+Hessian positive definite, eigenvalue range [3.383494,181.77].
+Model rank =  20 / 20 
+
+Basis dimension (k) checking results. Low p-value (k-index&lt;1) may
+indicate that k is too low, especially if edf is close to k'.
+
+           k'  edf k-index p-value    
+s(ndate) 19.0 14.9    0.32  &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p>As mentioned we could be increasing <code>k</code> but we won’t for now. Perhaps the tails of the residual distribution seem a little fat, but we won’t worry too much about this for our straw man model.</p>
+<p>Looking at the fit:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># normally we'd need to construct a prediction data set here and use</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co"># the predict() function's newdata= argument, but since we have data for</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># each day, we don't need to supply that value</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>temp <span class="ot">&lt;-</span> <span class="fu">predict</span>(b0, <span class="at">se=</span><span class="cn">TRUE</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>bal_2019<span class="sc">$</span>pred_b0 <span class="ot">&lt;-</span> temp<span class="sc">$</span>fit</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>bal_2019<span class="sc">$</span>pred_b0_u <span class="ot">&lt;-</span> temp<span class="sc">$</span>fit <span class="sc">+</span> <span class="fl">1.96</span><span class="sc">*</span>temp<span class="sc">$</span>se.fit</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>bal_2019<span class="sc">$</span>pred_b0_l <span class="ot">&lt;-</span> temp<span class="sc">$</span>fit <span class="sc">-</span> <span class="fl">1.96</span><span class="sc">*</span>temp<span class="sc">$</span>se.fit</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="co"># note that we can automate this using the pred_with_ci function</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co"># in the mgcvUtils package. We'll use that next time...</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019) <span class="sc">+</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b0), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b0_u, <span class="at">ymin=</span>pred_b0_l),</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ncv_timeseries_files/figure-html/dumb-fit-check-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>This still looks very wiggly and I don’t think this really explains the overall <em>yearly</em> pattern in the data very well – we’re overfitting.</p>
+</section>
+<section id="autoregression-via-a-gamm" class="level2">
+<h2 class="anchored" data-anchor-id="autoregression-via-a-gamm">Autoregression via a GAMM</h2>
+<p>The <code>gamm</code> function in <code>mgcv</code> will allow us to fit an <a href="https://en.wikipedia.org/wiki/Autoregressive_model">autoregressive process</a> in addition to the smoother. This should handle some of the short-scale autocorrelation in the data. Here we’ll use an AR(<span class="math inline">\(p\)</span>) process – allowing the previous <span class="math inline">\(p\)</span> time points to influence the following point. This is a “usual” way of dealing with data that has autocorrelation.</p>
+<p>Based on the <code>pacf</code> plot above, let’s try <span class="math inline">\(p=10\)</span>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>b1 <span class="ot">&lt;-</span> <span class="fu">gamm</span>(COSMOS_VWC <span class="sc">~</span> <span class="fu">s</span>(ndate, <span class="at">k=</span><span class="dv">20</span>), <span class="at">data=</span>bal_2019,</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>           <span class="at">correlation=</span><span class="fu">corARMA</span>(<span class="at">p=</span><span class="dv">10</span>))</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(b1<span class="sc">$</span>gam)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Family: gaussian 
+Link function: identity 
+
+Formula:
+COSMOS_VWC ~ s(ndate, k = 20)
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)   32.217      0.433   74.41   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+           edf Ref.df    F p-value    
+s(ndate) 2.694  2.694 8.06 0.00053 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.338   
+  Scale est. = 8.2245    n = 365</code></pre>
+</div>
+</div>
+<p>Note that the effective degrees of freedom have decreased from 15.87 to 3.69, so we expect that the resulting smooth will be much… smoother :)</p>
+<p>We’ll use the <code>pred_with_ci</code> function for speed in generating confidence intervals, it’s from the <code>mgcvUtils</code> package, available on <a href="https://github.com/dill/mgcvUtils">github here</a>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># install mgcvUtils</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">"dill/mgcvUtils"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Using github PAT from envvar GITHUB_TOKEN. Use `gitcreds::gitcreds_set()` and unset GITHUB_TOKEN in .Renviron (or elsewhere) if you want to use the more secure git credential store instead.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Downloading GitHub repo dill/mgcvUtils@HEAD</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>tidyr (NA -&gt; 1.3.1) [CRAN]</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Installing 1 packages: tidyr</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Installing package into '/home/runner/work/_temp/Library'
+(as 'lib' is unspecified)</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>── R CMD build ─────────────────────────────────────────────────────────────────
+* checking for file ‘/tmp/Rtmp6tFQEA/remotes8eb47af7fce4/dill-mgcvUtils-6364285/DESCRIPTION’ ... OK
+* preparing ‘mgcvUtils’:
+* checking DESCRIPTION meta-information ... OK
+* checking for LF line-endings in source and make files and shell scripts
+* checking for empty or unneeded directories
+Omitted ‘LazyData’ from DESCRIPTION
+* building ‘mgcvUtils_0.0.1.9000.tar.gz’</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Installing package into '/home/runner/work/_temp/Library'
+(as 'lib' is unspecified)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcvUtils)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b1<span class="sc">$</span>gam, bal_2019,</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b1"</span>, <span class="at">ci_label=</span><span class="st">"pred_b1"</span>)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019) <span class="sc">+</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b1), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b1_u, <span class="at">ymin=</span>pred_b1_l),</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ncv_timeseries_files/figure-html/gamm-fit-check-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>That’s a lot smoother. We have an AR parameters of:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>b1<span class="sc">$</span>lme<span class="sc">$</span>modelStruct<span class="sc">$</span>corStruct</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Correlation structure of class corARMA representing
+        Phi1         Phi2         Phi3         Phi4         Phi5         Phi6 
+ 0.799478706 -0.020660275 -0.008209886  0.041636043  0.005374399 -0.066563555 
+        Phi7         Phi8         Phi9        Phi10 
+ 0.029103710 -0.020105682  0.031664372 -0.003268618 </code></pre>
+</div>
+</div>
+<p>indicating strong positive correlation between the data at a lag of 1, then smaller correlations at further lags.</p>
+</section>
+<section id="using-neighbourhood-cross-validation" class="level2">
+<h2 class="anchored" data-anchor-id="using-neighbourhood-cross-validation">Using neighbourhood cross-validation</h2>
+<p>From the paper:</p>
+<p><em>If it is reasonable to assume that there is short range residual correlation between point <span class="math inline">\(k\)</span> and points in <span class="math inline">\(\alpha(k)\)</span>, but not between <span class="math inline">\(k\)</span> and <span class="math inline">\(j \in / \alpha(k)\)</span>, then NCV provides a means to choose hyper-parameters without the danger of overfit that such short range (positive) autocorrelation otherwise causes</em></p>
+<p>The big question, then, is “what does <span class="math inline">\(\alpha(k)\)</span> look like for my data”?</p>
+<p>Let’s start by using the autocorrelogram as a guide, and let’s also be a bit pessimistic and say that the neighbourhood goes out to lag 40 around each point (20 in each direction).</p>
+<p>A reminder from the documentation:</p>
+<pre><code>`k` is the vector of indices to be dropped for each neighbourhood and `m`
+gives the end of each neighbourhood. So `nei$k[(nei$m[j-1]+1):nei$m[j]]`
+gives the points dropped for the neighbourhood `j`. `i` is the vector of
+indices of points to predict, with corresponding endpoints `mi`. So
+`nei$i[(nei$mi[j-1]+1):nei$mi[j]]` indexes the points to predict for
+neighbourhood j.</code></pre>
+<p>We’re going to create a moving-window-type approach, for the 20 observations either side of each datum. In the literature, this is often referred to as “blocked CV” <span class="citation" data-cites="liuUsingCrossvalidationMethods2024 snijdersCrossValidationPredictorEvaluation1988">(<a href="#ref-liuUsingCrossvalidationMethods2024" role="doc-biblioref">Liu and Zhou, 2024</a>; <a href="#ref-snijdersCrossValidationPredictorEvaluation1988" role="doc-biblioref">Snijders, 1988</a>)</span>. We can do that relatively easily (though maybe somewhat cryptically) using the below code.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>nei <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>start <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="dv">1</span>, (<span class="dv">1</span><span class="sc">:</span><span class="dv">365</span>)<span class="sc">-</span><span class="dv">20</span>)</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>end <span class="ot">&lt;-</span> <span class="fu">pmin</span>(<span class="dv">365</span>, (<span class="dv">0</span><span class="sc">:</span><span class="dv">364</span>)<span class="sc">+</span><span class="dv">20</span>)</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">365</span>, \(x) start[x]<span class="sc">:</span>end[x])</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">unlist</span>(nt)</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(<span class="fu">lapply</span>(nt, length))</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>i <span class="ot">&lt;-</span> nei<span class="sc">$</span>k</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> nei<span class="sc">$</span>m</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>One issue with setting these neighbourhoods up is that we aren’t 100% sure whether the computer is doing what we want. I made a wee tool to visualise this for time series (at least) to check what the cross-validation structure you created looks right. You can find that as part of the <code>mgcvUtils</code> package <a href="https://github.com/dill/mgcvUtils">on github here</a>. We can then pass the neighbourhood structure to it and see what it produces:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vis_nei</span>(nei)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ncv_timeseries_files/figure-html/vis-nei-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The horizontal axis indexes the data, the vertical gives the fold. So for the first fold (bottom row) we see the 20 observations after the first, with the window increasing its width until we get a full 40 data included in the block. We can see here that the elements to drop and predict (“Both”) form a band over the data<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. The uncoloured part of the data is used to fit the model.</p>
+<p>Now we’re happy with the neighbourhood structure, we can proceed to model fitting.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>b2 <span class="ot">&lt;-</span> <span class="fu">gam</span>(COSMOS_VWC <span class="sc">~</span> <span class="fu">s</span>(ndate, <span class="at">k=</span><span class="dv">20</span>), <span class="at">data=</span>bal_2019, <span class="at">method=</span><span class="st">"NCV"</span>, <span class="at">nei=</span>nei)</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(b2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Family: gaussian 
+Link function: identity 
+
+Formula:
+COSMOS_VWC ~ s(ndate, k = 20)
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  32.2112     0.1442   223.4   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+           edf Ref.df     F p-value    
+s(ndate) 3.436  4.291 44.54  &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.367   Deviance explained = 37.3%
+NCV = 1.3349e+05  Scale est. = 7.5862    n = 365</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b2, bal_2019,</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b2"</span>, <span class="at">ci_label=</span><span class="st">"pred_b2"</span>)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019) <span class="sc">+</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b2), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b2_u, <span class="at">ymin=</span>pred_b2_l),</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ncv_timeseries_files/figure-html/ncv-basic-fit-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Well that looks quite nice! Note the reduced confidence band width!</p>
+<p>Let’s plot all three models together (with a bit of data fiddling to get that right):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>bal_2019_base <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">DATE_TIME=</span>bal_2019<span class="sc">$</span>DATE_TIME,</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>                            <span class="at">pred =</span> bal_2019<span class="sc">$</span>COSMOS_VWC,</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>                            <span class="at">model =</span> <span class="st">"Observed VWC"</span>,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>                            <span class="at">ci_u =</span> <span class="cn">NA</span>, <span class="at">ci_l=</span><span class="cn">NA</span>)</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>bal_2019_plot <span class="ot">&lt;-</span> <span class="fu">rbind</span>(bal_2019_base,</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>                       <span class="fu">pred_with_ci</span>(b0, bal_2019_base, <span class="at">label=</span><span class="st">"Simple GAM"</span>,</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">label_label=</span><span class="st">"model"</span>),</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>                       <span class="fu">pred_with_ci</span>(b1<span class="sc">$</span>gam, bal_2019_base, <span class="at">label=</span><span class="st">"GAMM"</span>,</span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">label_label=</span><span class="st">"model"</span>),</span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>                       <span class="fu">pred_with_ci</span>(b2, bal_2019_base, <span class="at">label=</span><span class="st">"NCV GAM"</span>,</span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">label_label=</span><span class="st">"model"</span>))</span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019_plot) <span class="sc">+</span></span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred, <span class="at">group=</span>model, <span class="at">colour=</span>model),</span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>            <span class="at">lwd=</span><span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>ci_u, <span class="at">ymin=</span>ci_l,</span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a>                  <span class="at">group=</span>model, <span class="at">fill=</span>model),</span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a>              <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">colour=</span><span class="st">"Model"</span>, <span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position=</span><span class="st">"bottom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in max(ids, na.rm = TRUE): no non-missing arguments to max; returning
+-Inf</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ncv_timeseries_files/figure-html/plot-all-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="what-about-forward-prediction-schemes" class="level2">
+<h2 class="anchored" data-anchor-id="what-about-forward-prediction-schemes">What about forward prediction schemes?</h2>
+<p>Instead of having a moving window around each datum, we could instead try a predict-forward scheme where we take months cumulatively, predicting the remaining months. Concretely: we’ll fit to January, predicting February through December, then January and February, predicting March through December and so on.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>mdays <span class="ot">&lt;-</span> <span class="fu">seq.Date</span>(<span class="fu">ymd</span>(<span class="st">"2019-01-01"</span>), <span class="fu">ymd</span>(<span class="st">"2019-12-31"</span>), <span class="at">by=</span><span class="fu">day</span>(<span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: tz(): Don't know how to compute timezone for object of class numeric;
+returning "UTC".</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>mdays <span class="ot">&lt;-</span> <span class="fu">month</span>(<span class="fu">ymd</span>(mdays))</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>nei <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a><span class="co"># want to miss out all but months 1:n for n=1:11, then predict the rest of</span></span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a><span class="co"># the series, let's write this as a for loop because it's easy to think about</span></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>){</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># days *not* in this month</span></span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>  iind <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="sc">!</span>(mdays <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span>i))</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># drop</span></span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>k, iind)</span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>m, <span class="fu">length</span>(iind))</span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># want to predict forward</span></span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a>  iind <span class="ot">&lt;-</span> <span class="fu">which</span>(mdays <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span>i)</span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>i <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>i, iind)</span>
+<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>mi, <span class="fu">length</span>(iind))</span>
+<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(nei<span class="sc">$</span>m)</span>
+<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(nei<span class="sc">$</span>mi)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>What does that look like?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vis_nei</span>(nei)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ncv_timeseries_files/figure-html/fwd-vis-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>(Note the difference in the plot compared to the previous examples where we only had one colour, now we have disjoint leave-out and prediction sets.)</p>
+<p>Now fitting that model and making predictions as before:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>b3 <span class="ot">&lt;-</span> <span class="fu">gam</span>(COSMOS_VWC <span class="sc">~</span> <span class="fu">s</span>(ndate, <span class="at">k=</span><span class="dv">20</span>), <span class="at">data=</span>bal_2019, <span class="at">method=</span><span class="st">"NCV"</span>, <span class="at">nei=</span>nei)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in bfgs(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS, L = G$L, :
+some NCV updates not positive definite</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(b3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Family: gaussian 
+Link function: identity 
+
+Formula:
+COSMOS_VWC ~ s(ndate, k = 20)
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  32.2112     0.1249   257.9   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+         edf Ref.df     F p-value    
+s(ndate)  19     19 22.16  &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.525   Deviance explained =   55%
+NCV = 9442.7  Scale est. = 5.6957    n = 365</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b3, bal_2019,</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b3"</span>, <span class="at">ci_label=</span><span class="st">"pred_b3"</span>)</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019) <span class="sc">+</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b3), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b3_u, <span class="at">ymin=</span>pred_b3_l),</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ncv_timeseries_files/figure-html/fwd-fit-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>So, we get a rather different fit here to previously. This should give us some pause to think about how the construction of the neighbourhood might influence the results from our models. Really, these different schemes are asking different things of the data.</p>
+</section>
+<section id="what-does-cross-validation-do" class="level2">
+<h2 class="anchored" data-anchor-id="what-does-cross-validation-do">What does cross-validation do?</h2>
+<p>Given cross-validation is a relatively “simple” idea: leave data out, fit a model, and predict, it’s actually a bit troubling that its not 100% obvious what it’s <em>doing</em> in terms of fitting in a completely statistical sense – what are the predictions representative <em>of</em>? Fortunately, there’s a nice paper for that.</p>
+<p><span class="citation" data-cites="batesCrossValidationWhatDoes2024">Bates <em>et al.</em> (<a href="#ref-batesCrossValidationWhatDoes2024" role="doc-biblioref">2024</a>)</span> explain what cross-validation is doing internally and what it is that the CV score is estimating<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>. They find that it estimates “the average prediction error of models fit on other unseen training sets drawn from the same population.” That’s contrary to what we might think, that the estimate if of “the prediction error for the model at hand, fit to the training data.”</p>
+<p>Let’s unpack that a little and then apply it to the results we have above. If we’re taking subsets of the data fitting to them and then predicting back on those same sets, then the cross-validation score is estimating the average prediction error on the training sets (which weren’t included in the testing set used to fit the data). For our first example with NCV (<code>b2</code>), where we had a blocked, moving window design to our cross-validation scheme, we can see that we have a model that generally does a reasonable “average” over the time series.</p>
+<p>Our “forward prediction” model (<code>b3</code>) looks like it’s again overfitting. Thinking about this in the context of estimating average prediction error across the training data, this makes sense. The final fold (the top row of the neighbourhood figure) includes almost all the data, so we’re not breaking the dependence and a model that overfits on the final fold gives a lower average prediction error over the all the other folds too.</p>
+<p>Hopefully this is a helpful lesson in thinking about how NCV works and how the schemes used to fit the model can give rather different answers.</p>
+
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-batesCrossValidationWhatDoes2024" class="csl-entry" role="listitem">
+Bates, S., Hastie, T. and Tibshirani, R. (2024) Cross-<span>Validation</span>: <span>What Does It Estimate</span> and <span>How Well Does It Do It</span>? <em>Journal of the American Statistical Association</em>, <strong>119</strong>, 1434–1445. ASA Website. DOI: <a href="https://doi.org/10.1080/01621459.2023.2197686">10.1080/01621459.2023.2197686</a>.
+</div>
+<div id="ref-liuUsingCrossvalidationMethods2024" class="csl-entry" role="listitem">
+Liu, S. and Zhou, D. J. (2024) Using cross-validation methods to select time series models: <span>Promises</span> and pitfalls. <em>British Journal of Mathematical and Statistical Psychology</em>, <strong>77</strong>, 337–355. DOI: <a href="https://doi.org/10.1111/bmsp.12330">10.1111/bmsp.12330</a>.
+</div>
+<div id="ref-snijdersCrossValidationPredictorEvaluation1988" class="csl-entry" role="listitem">
+Snijders, T. A. B. (1988) On <span>Cross-Validation</span> for <span>Predictor Evaluation</span> in <span>Time Series</span>. In <em>On <span>Model Uncertainty</span> and Its <span>Statistical Implications</span></em> (eds. M. Beckmann, W. Krelle, and T. K. Dijkstra), pp. 56–69. Berlin, Heidelberg: Springer Berlin Heidelberg. DOI: <a href="https://doi.org/10.1007/978-3-642-61564-1_4">10.1007/978-3-642-61564-1_4</a>.
+</div>
+</div></section><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>I have a half appointment at UKCEH, they really are nice folks<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Note that the <code>pacf</code> function assumes that your data are in order.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>If we had disjoint sets for the leave out and predict sets, we’d see additional colours and pattern here. See later on for an example.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>They also explain a lot of other stuff, it’s a nice paper!<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/calgary\.converged\.yt");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
