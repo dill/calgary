@@ -1,0 +1,333 @@
+---
+title: Neighbourhood cross-validation for time series
+author: David L Miller
+date: 2024-??-??
+bibliography: ncv.bib
+csl: journal-of-the-royal-statistical-society.csl
+format:
+  html:
+    include-in-header: ../mathjax.html
+    html-math-method:
+      method: mathjax
+
+---
+
+This is the second in a series on neighbourhood cross-validation, following from the [introductory article here](ncv.html). The neighbourhood cross-validation fitting method is available in `mgcv` version [1.9-0](https://cran.r-project.org/web/packages/mgcv/ChangeLog) onwards. Here I'll focus on using cross-validation as a replacement for using autoregressive modelling structures when dealing with temporally correlated data.
+
+The primary reference for the NCV method is Simon Wood's [arXiv preprint](https://arxiv.org/html/2404.16490v1).
+
+It's important to note that I know very little about time series analysis, the focus here is on the methods we can use to fit things with NCV. There may well be much better ways to analyse these time series! Don't yell at me.
+
+This is based on some work with BioSS colleagues: [Katherine Whyte](https://www.bioss.ac.uk/people/kwhyte), [Ana Couto](https://www.bioss.ac.uk/people/acouto) and [Thomas Cornulier](https://www.bioss.ac.uk/people/tcornulier). Thanks to them for their input at various stages of this.
+
+## I have a time series, now I'm sad
+
+We'll start by looking at a high-resolution time series collected by the fine folks at the UK Centre for Ecology and Hydrology^[I have a half appointment at UKCEH, they really are nice folks]. Data are from the COSMOS experiment, which collects soil moisture data around the UK, using literally cosmic rays (fast neutrons, see [here for more information](https://cosmos.ceh.ac.uk/measuring)). These data are collected at about 50 sites across the UK at a temporal resolution of every 15 minutes.
+
+We will use the COSMOS-UK soil moisture data that has been aggregated at a daily resolution (mainly for computational time reasons). Note also that this is not the up-to-date version of the data, it's based on when I downloaded it so the data ranges from mid-2014 through to the end of 2022.
+
+The measurement we’re interested in here is the “volumetric water content” (VWC) as a function of other covariates such as space and time. VWC is derived from counts of fast neutrons in the surrounding area by a cosmic-ray sensing probe.
+
+I've previously processed the data, [the script for which you can find here](https://gitlab.bioss.ac.uk/dmiller/cosmos-soil-moisture-data-processing). You can download the full, processed dataset [here](cosmos-processed.RData).
+
+Loading the data, we have two `data.frame`s: `all_sites` which has the full data set and `uk_grid` which is a prediction grid (which we'll ignore here). Taking a peak at the `all_sites` data:
+
+```{r}
+load("cosmos-processed.RData")
+head(all_sites)
+```
+
+We won't confuse things by trying to deal with [all the sites](https://cosmos.ceh.ac.uk/network) here, so let's just select one: [Balruddery](https://cosmos.ceh.ac.uk/sites/BALRD) (which is over the road from my office) near Dundee. Let's take a look at that time series:
+
+```{r select}
+library(ggplot2)
+library(dplyr)
+
+bal <- subset(all_sites, SITE_NAME=="Balruddery")
+
+ggplot(bal) +
+  geom_line(aes(x=DATE_TIME, y=COSMOS_VWC)) +
+  labs(x="Date", y="Volumetric water content") +
+  theme_minimal()
+```
+
+We can also plot this as years on top of each other, to get a feeling of how similar the series is between years.
+
+```{r plot-again, message=FALSE}
+library(lubridate)
+ggplot(bal) +
+  geom_line(aes(x=DATE_TIME-ymd(paste0(year, "-01-01")),
+                y=COSMOS_VWC,
+                group=as.factor(year),
+                colour=as.factor(year))) +
+  labs(x="Date", y="Volumetric water content", colour="Year") +
+  theme_minimal()
+```
+
+We can also look at [partial autocorrelation](https://en.wikipedia.org/wiki/Partial_autocorrelation_function) plots using the built-in `pacf`^[Note that the `pacf` function assumes that your data are in order.] function in R. Plotting this for the VWC shows the autocorrelation in the data.
+
+```{r acf-ex}
+pacf(bal$COSMOS_VWC, lag.max=30, main="Partial autocorrelogram for Balruddery")
+```
+
+Two things to think about here:
+  - I've increased `lag.max` from its default, so we can see 30 lags.
+  - The partial autocorrelation function is the right thing to look at here (I think) because we don't want to look at *every* lag between each time point: we really want to see the autocorrelation between a given point and future data.
+
+## Let's fit a dumb model to one year and see what's happening
+
+Starting by looking at Balruddery in 2019, we can try to fit a "standard" GAM to the data and see what happens.
+
+Before we jump into modelling, let's take a look at the autocorrelation in 2019 only:
+
+```{r acf-ex-2019}
+# just get the 2019 data
+bal_2019 <- subset(bal, year(DATE_TIME) == 2019)
+
+pacf(bal_2019$COSMOS_VWC, lag.max=30, main="Partial autocorrelogram for Balruddery 2019")
+```
+
+We'll only use the date to explain the model. The `ndate` variable is a numeric version of the date information.
+
+```{r dumb-gam, message=FALSE}
+library(mgcv)
+b0 <- gam(COSMOS_VWC ~ s(ndate, k=20), data=bal_2019, method="REML")
+summary(b0)
+```
+
+Note that I've bumped-up the maximum basis size. I could have increased it a lot more for this basic GAM, since it's trying to fit to all that variation in the data. This is one of the many issues with fitting a "simple" model to this kind of high-resolution time series data -- our usual ideas of how to increase complexity don't make sense. We want to get to the underlying pattern for the year, rather than getting hung-up on short-scale phenomena.
+
+Check plots show pretty good behaviour:
+
+```{r dumb-check, fig.asp=1}
+gam.check(b0)
+```
+
+As mentioned we could be increasing `k` but we won't for now. Perhaps the tails of the residual distribution seem a little fat, but we won't worry too much about this for our straw man model.
+
+Looking at the fit:
+
+```{r dumb-fit-check}
+# normally we'd need to construct a prediction data set here and use
+# the predict() function's newdata= argument, but since we have data for
+# each day, we don't need to supply that value
+temp <- predict(b0, se=TRUE)
+bal_2019$pred_b0 <- temp$fit
+bal_2019$pred_b0_u <- temp$fit + 1.96*temp$se.fit
+bal_2019$pred_b0_l <- temp$fit - 1.96*temp$se.fit
+
+# note that we can automate this using the pred_with_ci function
+# in the mgcvUtils package. We'll use that next time...
+
+ggplot(bal_2019) +
+  geom_line(aes(x=DATE_TIME, y=COSMOS_VWC)) +
+  geom_line(aes(x=DATE_TIME, y=pred_b0), colour="red") +
+  geom_ribbon(aes(x=DATE_TIME, ymax=pred_b0_u, ymin=pred_b0_l),
+              fill="red", alpha=0.5) +
+  labs(x="Date", y="Volumetric water content") +
+  theme_minimal()
+```
+
+This still looks very wiggly and I don't think this really explains the overall *yearly* pattern in the data very well -- we're overfitting.
+
+## Autoregression via a GAMM
+
+The `gamm` function in `mgcv` will allow us to fit an [autoregressive process](https://en.wikipedia.org/wiki/Autoregressive_model) in addition to the smoother. This should handle some of the short-scale autocorrelation in the data. Here we'll use an AR($p$) process -- allowing the previous $p$ time points to influence the following point. This is a "usual" way of dealing with data that has autocorrelation.
+
+Based on the `pacf` plot above, let's try $p=10$:
+
+```{r gamm}
+b1 <- gamm(COSMOS_VWC ~ s(ndate, k=20), data=bal_2019,
+           correlation=corARMA(p=10))
+summary(b1$gam)
+```
+
+Note that the effective degrees of freedom have decreased from `r round(sum(b0$edf), 2)` to `r round(sum(b1$gam$edf), 2)`, so we expect that the resulting smooth will be much... smoother :)
+
+We'll use the `pred_with_ci` function for speed in generating confidence intervals, it's from the `mgcvUtils` package, available on [github here](https://github.com/dill/mgcvUtils).
+
+```{r gamm-fit-check}
+# install mgcvUtils
+# devtools::install_github("dill/mgcvUtils")
+library(mgcvUtils)
+
+bal_2019 <- pred_with_ci(b1$gam, bal_2019,
+                         pred_label="pred_b1", ci_label="pred_b1")
+
+ggplot(bal_2019) +
+  geom_line(aes(x=DATE_TIME, y=COSMOS_VWC)) +
+  geom_line(aes(x=DATE_TIME, y=pred_b1), colour="red") +
+  geom_ribbon(aes(x=DATE_TIME, ymax=pred_b1_u, ymin=pred_b1_l),
+              fill="red", alpha=0.5) +
+  labs(x="Date", y="Volumetric water content") +
+  theme_minimal()
+```
+
+That's a lot smoother. We have an AR parameters of:
+
+```{r AR-pars}
+b1$lme$modelStruct$corStruct
+```
+
+indicating strong positive correlation between the data at a lag of 1, then smaller correlations at further lags.
+
+
+## Using neighbourhood cross-validation
+
+From the paper:
+
+*If it is reasonable to assume that there is short range residual correlation between point $k$ and points in $\alpha(k)$, but not between $k$ and $j \in / \alpha(k)$, then NCV provides a means to choose hyper-parameters without the danger of overfit that such short range (positive) autocorrelation otherwise causes*
+
+The big question, then, is "what does $\alpha(k)$ look like for my data"?
+
+Let's start by using the autocorrelogram as a guide, and let's also be a bit pessimistic and say that the neighbourhood goes out to lag 40 around each point (20 in each direction).
+
+A reminder from the documentation:
+
+    `k` is the vector of indices to be dropped for each neighbourhood and `m`
+    gives the end of each neighbourhood. So `nei$k[(nei$m[j-1]+1):nei$m[j]]`
+    gives the points dropped for the neighbourhood `j`. `i` is the vector of
+    indices of points to predict, with corresponding endpoints `mi`. So
+    `nei$i[(nei$mi[j-1]+1):nei$mi[j]]` indexes the points to predict for
+    neighbourhood j.
+
+We're going to create a moving-window-type approach, for the 20 observations either side of each datum. In the literature, this is often referred to as "blocked CV" [@liuUsingCrossvalidationMethods2024; @snijdersCrossValidationPredictorEvaluation1988]. We can do that relatively easily (though maybe somewhat cryptically) using the below code.
+
+```{r ncv-basic}
+nei <- list()
+start <- pmax(1, (1:365)-20)
+end <- pmin(365, (0:364)+20)
+nt <- lapply(1:365, \(x) start[x]:end[x])
+nei$k <- unlist(nt)
+nei$m <- cumsum(lapply(nt, length))
+nei$i <- nei$k
+nei$mi <- nei$m
+```
+
+One issue with setting these neighbourhoods up is that we aren't 100% sure whether the computer is doing what we want. I made a wee tool to visualise this for time series (at least) to check what the cross-validation structure you created looks right. You can find that as part of the `mgcvUtils` package [on github here](https://github.com/dill/mgcvUtils). We can then pass the neighbourhood structure to it and see what it produces:
+
+```{r vis-nei}
+vis_nei(nei)
+```
+
+The horizontal axis indexes the data, the vertical gives the fold. So for the first fold (bottom row) we see the 20 observations after the first, with the window increasing its width until we get a full 40 data included in the block. We can see here that the elements to drop and predict ("Both") form a band over the data^[If we had disjoint sets for the leave out and predict sets, we'd see additional colours and pattern here. See later on for an example.]. The uncoloured part of the data is used to fit the model.
+
+Now we're happy with the neighbourhood structure, we can proceed to model fitting.
+
+```{r ncv-basic-fit}
+b2 <- gam(COSMOS_VWC ~ s(ndate, k=20), data=bal_2019, method="NCV", nei=nei)
+summary(b2)
+
+bal_2019 <- pred_with_ci(b2, bal_2019,
+                         pred_label="pred_b2", ci_label="pred_b2")
+
+ggplot(bal_2019) +
+  geom_line(aes(x=DATE_TIME, y=COSMOS_VWC)) +
+  geom_line(aes(x=DATE_TIME, y=pred_b2), colour="red") +
+  geom_ribbon(aes(x=DATE_TIME, ymax=pred_b2_u, ymin=pred_b2_l),
+              fill="red", alpha=0.5) +
+  labs(x="Date", y="Volumetric water content") +
+  theme_minimal()
+```
+
+Well that looks quite nice! Note the reduced confidence band width!
+
+Let's plot all three models together (with a bit of data fiddling to get that right):
+
+```{r plot-all}
+bal_2019_base <- data.frame(DATE_TIME=bal_2019$DATE_TIME,
+                            pred = bal_2019$COSMOS_VWC,
+                            model = "Observed VWC",
+                            ci_u = NA, ci_l=NA)
+
+bal_2019_plot <- rbind(bal_2019_base,
+                       pred_with_ci(b0, bal_2019_base, label="Simple GAM",
+                                    label_label="model"),
+                       pred_with_ci(b1$gam, bal_2019_base, label="GAMM",
+                                    label_label="model"),
+                       pred_with_ci(b2, bal_2019_base, label="NCV GAM",
+                                    label_label="model"))
+
+ggplot(bal_2019_plot) +
+  geom_line(aes(x=DATE_TIME, y=pred, group=model, colour=model),
+            lwd=0.7) +
+  geom_ribbon(aes(x=DATE_TIME, ymax=ci_u, ymin=ci_l,
+                  group=model, fill=model),
+              alpha=0.5) +
+  labs(colour="Model", x="Date", y="Volumetric water content") +
+  theme_minimal() +
+  theme(legend.position="bottom")
+```
+
+## What about forward prediction schemes?
+
+Instead of having a moving window around each datum, we could instead try a predict-forward scheme where we take months cumulatively, predicting the remaining months. Concretely: we'll fit to January, predicting February through December, then January and February, predicting March through December and so on.
+
+```{r ncv-fwd-month}
+mdays <- seq.Date(ymd("2019-01-01"), ymd("2019-12-31"), by=day(1))
+mdays <- month(ymd(mdays))
+
+nei <- list()
+nei$k <- c()
+nei$m <- c()
+
+# want to miss out all but months 1:n for n=1:11, then predict the rest of
+# the series, let's write this as a for loop because it's easy to think about
+for(i in 1:11){
+  # days *not* in this month
+  iind <- which(!(mdays %in% 1:i))
+  # drop
+  nei$k <- c(nei$k, iind)
+  nei$m <- c(nei$m, length(iind))
+
+  # want to predict forward
+  iind <- which(mdays %in% 1:i)
+  nei$i <- c(nei$i, iind)
+  nei$mi <- c(nei$mi, length(iind))
+}
+nei$m <- cumsum(nei$m)
+nei$mi <- cumsum(nei$mi)
+```
+
+What does that look like?
+
+```{r, fwd-vis}
+vis_nei(nei)
+```
+
+(Note the difference in the plot compared to the previous examples where we only had one colour, now we have disjoint leave-out and prediction sets.)
+
+Now fitting that model and making predictions as before:
+
+```{r fwd-fit}
+b3 <- gam(COSMOS_VWC ~ s(ndate, k=20), data=bal_2019, method="NCV", nei=nei)
+summary(b3)
+
+bal_2019 <- pred_with_ci(b3, bal_2019,
+                         pred_label="pred_b3", ci_label="pred_b3")
+
+ggplot(bal_2019) +
+  geom_line(aes(x=DATE_TIME, y=COSMOS_VWC)) +
+  geom_line(aes(x=DATE_TIME, y=pred_b3), colour="red") +
+  geom_ribbon(aes(x=DATE_TIME, ymax=pred_b3_u, ymin=pred_b3_l),
+              fill="red", alpha=0.5) +
+  labs(x="Date", y="Volumetric water content") +
+  theme_minimal()
+```
+
+So, we get a rather different fit here to previously. This should give us some pause to think about how the construction of the neighbourhood might influence the results from our models. Really, these different schemes are asking different things of the data.
+
+## What does cross-validation do?
+
+Given cross-validation is a relatively "simple" idea: leave data out, fit a model, and predict, it's actually a bit troubling that its not 100% obvious what it's *doing* in terms of fitting in a completely statistical sense -- what are the predictions representative *of*? Fortunately, there's a nice paper for that.
+
+@batesCrossValidationWhatDoes2024 explain what cross-validation is doing internally and what it is that the CV score is estimating^[They also explain a lot of other stuff, it's a nice paper!]. They find that it estimates "the average prediction error of models fit on other unseen training sets drawn from the same population." That's contrary to what we might think, that the estimate if of "the prediction error for the model at hand, fit to the training data."
+
+Let's unpack that a little and then apply it to the results we have above. If we're taking subsets of the data fitting to them and then predicting back on those same sets, then the cross-validation score is estimating the average prediction error on the training sets (which weren't included in the testing set used to fit the data). For our first example with NCV (`b2`), where we had a blocked, moving window design to our cross-validation scheme, we can see that we have a model that generally does a reasonable "average" over the time series.
+
+Our "forward prediction" model (`b3`) looks like it's again overfitting. Thinking about this in the context of estimating average prediction error across the training data, this makes sense. The final fold (the top row of the neighbourhood figure) includes almost all the data, so we're not breaking the dependence and a model that overfits on the final fold gives a lower average prediction error over the all the other folds too.
+
+Hopefully this is a helpful lesson in thinking about how NCV works and how the schemes used to fit the model can give rather different answers.
+
+
+
