@@ -1,7 +1,7 @@
 ---
 title: Neighbourhood cross-validation for time series
 author: David L Miller
-date: 2024-??-??
+date: 2024-10-11
 bibliography: ncv.bib
 csl: journal-of-the-royal-statistical-society.csl
 format:
@@ -254,14 +254,17 @@ ggplot(bal_2019_plot) +
   geom_ribbon(aes(x=DATE_TIME, ymax=ci_u, ymin=ci_l,
                   group=model, fill=model),
               alpha=0.5) +
-  labs(colour="Model", x="Date", y="Volumetric water content") +
+  labs(colour="Model", fill="Model", x="Date", y="Volumetric water content") +
   theme_minimal() +
   theme(legend.position="bottom")
 ```
 
-## What about forward prediction schemes?
+## What about other cross-validation schemes?
 
-Instead of having a moving window around each datum, we could instead try a predict-forward scheme where we take months cumulatively, predicting the remaining months. Concretely: we'll fit to January, predicting February through December, then January and February, predicting March through December and so on.
+## Short-term, forward prediction
+
+Instead of having a moving window around each datum, we could instead try a predict-forward scheme where we take data up to a given month and predict one month ahead (ignoring any future data). This means that as we work through the timeseries, we have more information (for the last set we have January-November data to work with).
+
 
 ```{r ncv-fwd-month}
 mdays <- seq.Date(ymd("2019-01-01"), ymd("2019-12-31"), by=day(1))
@@ -271,17 +274,16 @@ nei <- list()
 nei$k <- c()
 nei$m <- c()
 
-# want to miss out all but months 1:n for n=1:11, then predict the rest of
-# the series, let's write this as a for loop because it's easy to think about
+# let's write this as a for loop because it's easy to think about
 for(i in 1:11){
-  # days *not* in this month
-  iind <- which(!(mdays %in% 1:i))
+  # drop days after in this month
+  iind <- which(mdays > i)
   # drop
   nei$k <- c(nei$k, iind)
   nei$m <- c(nei$m, length(iind))
 
-  # want to predict forward
-  iind <- which(mdays %in% 1:i)
+  # want to predict forward 1 month
+  iind <- which(mdays == (i+1))
   nei$i <- c(nei$i, iind)
   nei$mi <- c(nei$mi, length(iind))
 }
@@ -295,7 +297,7 @@ What does that look like?
 vis_nei(nei)
 ```
 
-(Note the difference in the plot compared to the previous examples where we only had one colour, now we have disjoint leave-out and prediction sets.)
+(Note the difference in the plot compared to the previous examples where we only had one colour, now we have differing leave-out and prediction sets.)
 
 Now fitting that model and making predictions as before:
 
@@ -311,11 +313,65 @@ ggplot(bal_2019) +
   geom_line(aes(x=DATE_TIME, y=pred_b3), colour="red") +
   geom_ribbon(aes(x=DATE_TIME, ymax=pred_b3_u, ymin=pred_b3_l),
               fill="red", alpha=0.5) +
+  geom_line(aes(x=DATE_TIME, y=pred_b2), colour="#7cae00") +
+  geom_ribbon(aes(x=DATE_TIME, ymax=pred_b2_u, ymin=pred_b2_l),
+              fill="#7cae00", alpha=0.5) +
   labs(x="Date", y="Volumetric water content") +
   theme_minimal()
 ```
 
-So, we get a rather different fit here to previously. This should give us some pause to think about how the construction of the neighbourhood might influence the results from our models. Really, these different schemes are asking different things of the data.
+I've plotted the `b2` fit here in green for comparison. They look quite similar, but there is a difference in how big the May-ish dip is.
+
+
+## What about restricting the prediction neighbourhood?
+
+Taking the scheme that we saw in `b2` again, but this time just predicting back for the middle datum in the dropped set, we might expect to see some difference in the results.
+
+```{r ncv-small-preds}
+# construct this the other way around, we want to predict each point:
+nei <- list()
+nei$i <- 1:365 #partygirl
+nei$mi <- 1:length(start)
+
+# now take the 20 either side
+nt <- lapply(nei$i, \(x){
+  max(c(1, x-20)):min(c(365, x+20))
+})
+
+nei$k <- unlist(nt)
+nei$m <- cumsum(lapply(nt, length))
+# let the set we're predicting to be just the datum in the middle of the
+# training set
+
+# this is a bit wonky at the edges
+vis_nei(nei)
+```
+
+Now looking at the results:
+
+```{r ncv-small-preds-plot}
+b4 <- gam(COSMOS_VWC ~ s(ndate, k=20), data=bal_2019, method="NCV", nei=nei)
+summary(b4)
+
+bal_2019 <- pred_with_ci(b4, bal_2019,
+                         pred_label="pred_b4", ci_label="pred_b4")
+
+ggplot(bal_2019) +
+  geom_line(aes(x=DATE_TIME, y=COSMOS_VWC)) +
+  geom_line(aes(x=DATE_TIME, y=pred_b4), colour="red") +
+  geom_ribbon(aes(x=DATE_TIME, ymax=pred_b4_u, ymin=pred_b4_l),
+              fill="red", alpha=0.5) +
+  geom_line(aes(x=DATE_TIME, y=pred_b2), colour="#7cae00") +
+  geom_ribbon(aes(x=DATE_TIME, ymax=pred_b2_u, ymin=pred_b2_l),
+              fill="#7cae00", alpha=0.5) +
+  labs(x="Date", y="Volumetric water content") +
+  theme_minimal()
+```
+
+Again, I've plotted `b2` in green for comparison. We again see a very similar smooth *but* the uncertainty band is much wider until later in the dataset. We might think this is more realistic (the earlier months are much more variable than the latter ones), but we need a bit more thought to make sense of this...
+
+What does this mean? Why are these results different? Can we gain some insights and use this to help construct cross-validation schemes in future?
+
 
 ## What does cross-validation do?
 
@@ -325,9 +381,26 @@ Given cross-validation is a relatively "simple" idea: leave data out, fit a mode
 
 Let's unpack that a little and then apply it to the results we have above. If we're taking subsets of the data fitting to them and then predicting back on those same sets, then the cross-validation score is estimating the average prediction error on the training sets (which weren't included in the testing set used to fit the data). For our first example with NCV (`b2`), where we had a blocked, moving window design to our cross-validation scheme, we can see that we have a model that generally does a reasonable "average" over the time series.
 
-Our "forward prediction" model (`b3`) looks like it's again overfitting. Thinking about this in the context of estimating average prediction error across the training data, this makes sense. The final fold (the top row of the neighbourhood figure) includes almost all the data, so we're not breaking the dependence and a model that overfits on the final fold gives a lower average prediction error over the all the other folds too.
+Our "short-term, forward prediction" model (`b3`) looks like it's overfitting a little to the late April dip in water content. Since the folds are by month, it seems that the model overfits to that dip:
+
+```{r inspec}
+ggplot(subset(bal_2019, month(DATE_TIME) %in% 4:5)) +
+  geom_line(aes(x=DATE_TIME, y=COSMOS_VWC)) +
+  geom_line(aes(x=DATE_TIME, y=pred_b3), colour="red") +
+  geom_ribbon(aes(x=DATE_TIME, ymax=pred_b3_u, ymin=pred_b3_l),
+              fill="red", alpha=0.5) +
+  geom_line(aes(x=DATE_TIME, y=pred_b2), colour="#7cae00") +
+  geom_ribbon(aes(x=DATE_TIME, ymax=pred_b2_u, ymin=pred_b2_l),
+              fill="#7cae00", alpha=0.5) +
+  labs(x="Date", y="Volumetric water content") +
+  theme_minimal()
+```
+
+We make our predictions for April and can't help but fit as well as possible *within* each month (conditional on the overall smoothing parameter value, we still have to be smooth, but we can get a bit closer to the data).
+
+For the `b4`, the modification of `b2` where we only predict back to the middle value, we see a much wider confidence/credible band around the mean prediction. Again, thinking about this in terms of minimizing average prediction error helps us make sense of what's happening here. For a larger prediction neighbourhood, some things come out in the wash better: we overfit somewhere but that underfits somewhere else, so the result for that fold isn't as bad. When we predict only 1 point (and don't include the autocorrelated data around it) we become more uncertain, since each of those differences between the fitted and observed values^[Well, actually we should think in terms of the model deviance if we're really trying to think like the model.] are then considered alone, without the neighbours "helping" to average things out.
+
+Thinking about the "real" objective of NCV (average prediction error on unseen data) helps us understand what's going on here.
 
 Hopefully this is a helpful lesson in thinking about how NCV works and how the schemes used to fit the model can give rather different answers.
-
-
 
