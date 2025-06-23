@@ -2,34 +2,38 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://calgary.converged.yt/about.html</loc>
-    <lastmod>2024-10-11T15:16:53.823Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/articles/prediction_intervals.html</loc>
-    <lastmod>2024-10-11T15:16:53.827Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/articles/ncv_timeseries.html</loc>
-    <lastmod>2024-10-11T15:16:53.826Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/contributing.html</loc>
-    <lastmod>2024-10-11T15:16:53.828Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/index.html</loc>
-    <lastmod>2024-10-11T15:16:53.828Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/articles/ncv.html</loc>
-    <lastmod>2024-10-11T15:16:53.826Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/articles/gamvar.html</loc>
-    <lastmod>2024-10-11T15:16:53.826Z</lastmod>
+    <lastmod>2025-06-23T22:09:04.674Z</lastmod>
   </url>
   <url>
     <loc>https://calgary.converged.yt/articles/poisson_processes.html</loc>
-    <lastmod>2024-10-11T15:16:53.827Z</lastmod>
+    <lastmod>2025-06-23T22:09:04.678Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/articles/gamvar.html</loc>
+    <lastmod>2025-06-23T22:09:04.677Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/articles/ncv_timeseries.html</loc>
+    <lastmod>2025-06-23T22:09:04.678Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/contributing.html</loc>
+    <lastmod>2025-06-23T22:09:04.679Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/index.html</loc>
+    <lastmod>2025-06-23T22:09:04.679Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/articles/ncv.html</loc>
+    <lastmod>2025-06-23T22:09:04.677Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/articles/adaptive_smoothing.html</loc>
+    <lastmod>2025-06-23T22:09:04.674Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/articles/prediction_intervals.html</loc>
+    <lastmod>2025-06-23T22:09:04.678Z</lastmod>
   </url>
 </urlset>
