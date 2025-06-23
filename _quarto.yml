@@ -19,6 +19,8 @@ website:
           href: articles/poisson_processes.html
         - text: "Neighbourhood cross-validation"
           href: articles/ncv.html
+        - text: "Neighbourhood cross-validation for time series"
+          href: articles/ncv_timeseries.html
 
 format:
   html:
