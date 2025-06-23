@@ -46,6 +46,7 @@ jobs:
             any::spatstat.data
             any::lubridate
             any::devtools
+            any::patchwork
 
       # From https://github.com/julia-actions/setup-julia
       # - name: Setup Julia
