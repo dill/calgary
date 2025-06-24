@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: install gh cli
-        run: sudo snap install gh
+        run: snap install gh
 
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
