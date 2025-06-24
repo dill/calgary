@@ -12,6 +12,8 @@ name: Render and Publish
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
+    container:
+      image: rocker/r2u:24.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
