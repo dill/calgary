@@ -293,13 +293,27 @@ window.Quarto = {
 <p>When we set-up a smoother in a GAM, we have a penalty that is of the following matrix form: <span class="math display">\[\begin{equation}
 \lambda \boldsymbol{\beta}^\intercal \mathbf{S} \boldsymbol{\beta}.
 \label{pen}
-\end{equation}\]</span> where we have the fixed elements (usually integrals of derivatives of the basis functions) in <span class="math inline">\(\mathbf{S}\)</span> and the smoothers’ coefficients in <span class="math inline">\(\boldsymbol{\beta}\)</span>. is the <em>smoothing parameter</em> which we also estimate and controls the influence of the penalty on the fit (usually, we have the above expression substracted from the restricted or marginal likelihood for REML or ML).</p>
-<p>The smoothing parameter, <span class="math inline">\(\lambda\)</span>, tells us about how <em>wiggly</em> to make our functions. A <span class="math inline">\(\lambda\)</span> of 0 will mean that the whole penalty term is evaluated as zero, meaning the smother will overfit to the data. Letting <span class="math inline">\(\lambda\)</span> get larger and larger, we end up with the penalty dominating the fit. In that case we retrieve only the nullspace terms: those bits of the basis which don’t have derivatives (so aren’t affected by the penalty).</p>
+\end{equation}\]</span> where we have the fixed elements (usually integrals of derivatives of the basis functions) in <span class="math inline">\(\mathbf{S}\)</span> and the smoothers’ coefficients in <span class="math inline">\(\boldsymbol{\beta}\)</span>. <span class="math inline">\(\lambda\)</span> is the <em>smoothing parameter</em> which we also estimate and controls the influence of the penalty on the fit (usually, we have the above expression subtracted from the restricted or marginal likelihood for REML or ML).</p>
+<p>The smoothing parameter, <span class="math inline">\(\lambda\)</span>, tells us about how <em>wiggly</em> to make our functions. A <span class="math inline">\(\lambda\)</span> of 0 will mean that the whole penalty term is evaluated as zero, meaning the smother will overfit to the data. Letting <span class="math inline">\(\lambda\)</span> get larger and larger, we end up with the penalty dominating the fit. In that case we retrieve only the nullspace terms: those bits of the basis which don’t have derivatives (so aren’t affected by the penalty). This is shown in <a href="#fig-mr-wiggles" class="quarto-xref">Figure&nbsp;1</a>.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-mr-wiggles" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mr-wiggles-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="adaptive_smoothing_files/figure-html/fig-mr-wiggles-1.png" class="img-fluid figure-img" width="960">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-mr-wiggles-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Data (black dots) are generated from the blue line. In the left plot we have <span class="math inline">\(\lambda\)</span> be estimated. The middle plot shows that when the smoothing parameter is set to zero we get overfitting since the model is unpenalized. The right plot shows what happens when the penalty dominates and all the wiggles are removed from the model, leaving only the slope term which doesn’t have second derivatives (which are used for the penalty in this case).
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
 <p>This all works well in general, up to a point. What happens when the amount of smoothing we need changes with the covariate? In other words: what if we need the amount of smoothing to be adaptive?</p>
-<p>Most of this is based off Sections 5.33 and 5.3.5 of <span class="citation" data-cites="wood_generalized_2017a">SN Wood (<a href="#ref-wood_generalized_2017a" role="doc-biblioref">2017</a>)</span> as well as the <a href="https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/smooth.construct.ad.smooth.spec.html"><code>?smooth.construct.ad.smooth.spec</code></a> manual page, with a bit more explanation. See the last section for links to other approaches.</p>
+<p>Most of this is based off Sections 5.33 and 5.3.5 of <span class="citation" data-cites="wood_generalized_2017a">Wood (<a href="#ref-wood_generalized_2017a" role="doc-biblioref">2017a</a>)</span> as well as the <a href="https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/smooth.construct.ad.smooth.spec.html"><code>?smooth.construct.ad.smooth.spec</code></a> manual page, with a bit more explanation. See the last section for links to other approaches.</p>
 <section id="an-overused-example-motorcycle-crash-data" class="level1">
 <h1>An overused example: motorcycle crash data</h1>
-<p>Every expanation of adaptive smoothing uses the same tired example. This article is no different. The “simulated motorcycle crash data” found in <code>MASS::mcycle</code> seems to originate (in the statistics literature) in <span class="citation" data-cites="silverman_aspects_1985">Silverman (<a href="#ref-silverman_aspects_1985" role="doc-biblioref">1985</a>)</span> (which is a great paper!). The data originally come from a rather grim experiment <span class="citation" data-cites="schmidt1981biomechanical">(<a href="#ref-schmidt1981biomechanical" role="doc-biblioref">Schmidt <em>et al.</em>, 1981</a>)</span><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> where cadavers were given helments and hurled at walls to see what happens on impact. For our purposes, we are interested in the accelaration change recorded on sensors on the helmet.</p>
+<p>Every expanation of adaptive smoothing uses the same tired example. This article is no different. The “simulated motorcycle crash data” found in <code>MASS::mcycle</code> seems to originate (in the statistics literature) in <span class="citation" data-cites="silverman_aspects_1985">Silverman (<a href="#ref-silverman_aspects_1985" role="doc-biblioref">1985</a>)</span> (which is a great paper!). The data originally come from a rather grim experiment <span class="citation" data-cites="schmidt1981biomechanical">(<a href="#ref-schmidt1981biomechanical" role="doc-biblioref">Schmidt <em>et al.</em>, 1981</a>)</span><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> where cadavers were given helments and hurled at walls to see what happens on impact. For our purposes, we are interested in the accelaration change recorded on sensors on the helmet. We see the data in <a href="#fig-mcycle" class="quarto-xref">Figure&nbsp;2</a>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MASS)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
@@ -310,9 +324,14 @@ window.Quarto = {
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Time (ms)"</span>, <span class="at">y=</span><span class="st">"Acceleration (g)"</span>) <span class="sc">+</span></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="adaptive_smoothing_files/figure-html/mcycle-1.png" class="img-fluid figure-img" width="672"></p>
+<div id="fig-mcycle" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mcycle-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="adaptive_smoothing_files/figure-html/fig-mcycle-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-mcycle-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: The “motorcycle data”. These show the acceleration felt by sensors on the helmets of cadavers as they make impact with a wall.
+</figcaption>
 </figure>
 </div>
 </div>
@@ -320,94 +339,117 @@ window.Quarto = {
 <p>From a smoothing perspective, the data are interesting because there are clearly different variances at different times. We see a very flat start up to the impact, followed by rapid decelleration, then rebound to acceleration, then movement back to the zero line again (but with much more spread).</p>
 <p>We can fit the data using a regular smoother and see what happens:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: nlme</code></pre>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">gam</span>(accel <span class="sc">~</span> <span class="fu">s</span>(times), <span class="at">data=</span>mcycle)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>This is mgcv 1.9-3. For overview type 'help("mgcv-package")'.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">gam</span>(accel <span class="sc">~</span> <span class="fu">s</span>(times), <span class="at">data=</span>mcycle)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>plot_mpreds <span class="ot">&lt;-</span> <span class="cf">function</span>(model){</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  xx <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">times =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">60</span>, <span class="at">length.out=</span><span class="dv">400</span>))</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  pp <span class="ot">&lt;-</span> <span class="fu">predict</span>(model, <span class="at">newdata=</span>xx, <span class="at">se=</span><span class="cn">TRUE</span>)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  xx<span class="sc">$</span>accel <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(pp<span class="sc">$</span>fit)</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  xx<span class="sc">$</span>upper <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(pp<span class="sc">$</span>fit <span class="sc">+</span> <span class="fl">1.96</span><span class="sc">*</span>pp<span class="sc">$</span>se.fit)</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  xx<span class="sc">$</span>lower <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(pp<span class="sc">$</span>fit <span class="sc">-</span> <span class="fl">1.96</span><span class="sc">*</span>pp<span class="sc">$</span>se.fit)</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a> <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x=</span>times, <span class="at">y=</span>accel), <span class="at">data=</span>mcycle) <span class="sc">+</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>times, <span class="at">ymin=</span>lower, <span class="at">ymax=</span>upper),</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>                <span class="at">colour=</span><span class="st">"grey60"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>,</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>                <span class="at">data=</span>xx) <span class="sc">+</span></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>times, <span class="at">y=</span>accel), <span class="at">data=</span>xx) <span class="sc">+</span></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Time (ms)"</span>, <span class="at">y=</span><span class="st">"Acceleration (g)"</span>) <span class="sc">+</span></span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_minimal</span>()</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_mpreds</span>(b)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>I’ll write a little plotting function to make life easier</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plotting function</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>plot_mpreds <span class="ot">&lt;-</span> <span class="cf">function</span>(model){</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># prediction grid</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  xx <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">times =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">60</span>, <span class="at">length.out=</span><span class="dv">400</span>))</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># make the predictions</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  pp <span class="ot">&lt;-</span> <span class="fu">predict</span>(model, <span class="at">newdata=</span>xx, <span class="at">se=</span><span class="cn">TRUE</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># add predictions to the grid</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  xx<span class="sc">$</span>accel <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(pp<span class="sc">$</span>fit)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># approximate confidence bands</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  xx<span class="sc">$</span>upper <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(pp<span class="sc">$</span>fit <span class="sc">+</span> <span class="fl">1.96</span><span class="sc">*</span>pp<span class="sc">$</span>se.fit)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  xx<span class="sc">$</span>lower <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(pp<span class="sc">$</span>fit <span class="sc">-</span> <span class="fl">1.96</span><span class="sc">*</span>pp<span class="sc">$</span>se.fit)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create the plot itself</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x=</span>times, <span class="at">y=</span>accel), <span class="at">data=</span>mcycle) <span class="sc">+</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>times, <span class="at">ymin=</span>lower, <span class="at">ymax=</span>upper),</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>                <span class="at">colour=</span><span class="st">"grey60"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>,</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>                <span class="at">data=</span>xx) <span class="sc">+</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>times, <span class="at">y=</span>accel), <span class="at">data=</span>xx) <span class="sc">+</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Time (ms)"</span>, <span class="at">y=</span><span class="st">"Acceleration (g)"</span>) <span class="sc">+</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_minimal</span>()</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_mpreds</span>(b)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="adaptive_smoothing_files/figure-html/badfit-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="adaptive_smoothing_files/figure-html/plotter-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>What we see in this simple fit is some annoying misbehaviour in either extreme of the data. Why is the smoother decreasing at from zero, only to increase again before impact? At the other end, why do we see such wiggly behaviour followed by increase? These features aren’t supported by the data.</p>
+<p>What we see in this simple fit is some annoying misbehaviour in the extremes of the data. Why is the smoother decreasing from zero, only to increase again before impact? At the other end, why do we see such wiggly behaviour followed by increase? These features aren’t supported by the data.</p>
 <p>This is really down to the smoothing parameter being optimized for the bulk of the data, which is quite wiggly (and where we fit well). We are stuck with the <span class="math inline">\(\lambda\)</span> which does best “on average”, so our model sucks at either end of the data.</p>
 <p>But, what if we could make <span class="math inline">\(\lambda\)</span> a function of the time covariate?</p>
 </section>
 <section id="adaptive-smoothing-tools-we-need" class="level1">
 <h1>Adaptive smoothing: tools we need</h1>
-<p>Let’s imagine a very simple case, where we have data where the first half is very wiggly, then the second half is less wiggly. We would then want a separate smoothing parameter for the first half of the data (which was smaller, giving more wiggles) and another for the second half (larger, giving fewer wiggles). The first smoothing parameter would just apply to the first half of the basis functions and the latter to the second half (assuming we have a nice evenly-spaced basis; more on that in a moment).</p>
-<p>We might want to go beyond that and move to multiple <span class="math inline">\(\lambda\)</span>s over the range of the data. We need some tools to build such a thing.</p>
+<p>In the case above, we might imagine the case where we want to use, say, three smoothing parameters. Looking at <a href="#fig-mcyclesp" class="quarto-xref">Figure&nbsp;3</a>, we think we see a change in the amount of smoothing necessary at say 14ms (up to impact) and then again at 41ms (after rebound).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(mcycle) <span class="sc">+</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x=</span>times, <span class="at">y=</span>accel)) <span class="sc">+</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept=</span><span class="dv">14</span>, <span class="at">lty=</span><span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept=</span><span class="dv">41</span>, <span class="at">lty=</span><span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Time (ms)"</span>, <span class="at">y=</span><span class="st">"Acceleration (g)"</span>) <span class="sc">+</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-mcyclesp" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mcyclesp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="adaptive_smoothing_files/figure-html/fig-mcyclesp-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-mcyclesp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Where we might have differing smoothing in the “motorcycle data”.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Obviously it would be better to estimate this from the data rather than coming up with arbitrary cut-offs. To do that we’re going to need some generic tools…</p>
 <section id="multiple-penalties" class="level2">
 <h2 class="anchored" data-anchor-id="multiple-penalties">Multiple penalties</h2>
 <p>First we need to build a penalty for such a term. We can extend <span class="math inline">\(\eqref{pen}\)</span> to the case where we have multiple penalties for a single term. In which case we write <span class="math display">\[\begin{equation}
-  \sum_j \lambda_j \boldsymbol{\beta}^\intercal \mathbf{S}_j \boldsymbol{\beta},
+  \sum_j \lambda_j \boldsymbol{\beta}^\intercal \mathbf{S}_j \boldsymbol{\beta}.
 \label{multpen}
-\end{equation}\]</span> where we have split the penalty matrices and smoothing parameters and indexed them by <span class="math inline">\(j\)</span>. This idea should be fairly familiar as it’s how we create the total penalty for models with multiple terms. Just in this case, we’re using it for a single term.</p>
+\end{equation}\]</span> This idea should be fairly familiar as it’s how we create the total penalty for models with multiple terms.</p>
 </section>
 <section id="p-splines" class="level2">
 <h2 class="anchored" data-anchor-id="p-splines">P-splines</h2>
-<p>We need a basis to build our terms. For efficiency and interpretability purposes, <code>mgcv</code> uses P-splines <span class="citation" data-cites="eilers_flexible_1996">(<a href="#ref-eilers_flexible_1996" role="doc-biblioref">Eilers and Marx, 1996</a>)</span> to construct adaptive smoothers. Since they’re a bit different from other splines, let’s just review them for a moment.</p>
+<p>We need a basis to build our terms. For efficiency and interpretability purposes, <code>mgcv</code> uses P-splines<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> <span class="citation" data-cites="eilers_flexible_1996">(<a href="#ref-eilers_flexible_1996" role="doc-biblioref">Eilers and Marx, 1996</a>)</span> by default to construct adaptive smoothers (see below for other options). Since they’re a bit different from other splines, let’s just review them for a moment.</p>
 <p>“P-splines” in the sense used in <code>mgcv</code> are Marx and Eiler’s “B-splines”: they are a B-spline basis with a “difference” penalty (rather than an integral penalty). This makes things much faster for computation.</p>
 </section>
 <section id="b-spline-basis" class="level2">
 <h2 class="anchored" data-anchor-id="b-spline-basis">B-spline basis</h2>
 <p>The B-spline basis is an interesting and useful one. We setup the basis functions by recursion, so an order <span class="math inline">\(m+1\)</span> basis function is to multiply some fixed thing (which we’ll avoid writing-out here because I don’t think it adds much to the explanation) by the <span class="math inline">\(m^\text{th}\)</span> order basis function. The <span class="math inline">\(-1^\text{th}\)</span> order basis functions are just 1 inside a range and 0 outside.</p>
-<p>We place the B-spline basis at <em>knots</em> (the knot is the centre of the basis function) and a basis function of order <span class="math inline">\(m+1\)</span> (where <span class="math inline">\(m=2\)</span> is a cubic spline, for boring definitional reasons) will be non-zero over the <span class="math inline">\(m+3\)</span> adjacent knots. This, along with the regular placement of knots (more on that in a moment) means that B-splines are a <em>local basis</em> (that their effects are felt only in the vicinity of their knot). This makes them easy to interpret (compared to, say, thin plate splines). <a href="#fig-bsbasis" class="quarto-xref">Figure&nbsp;1</a> shows some cubic B-spline basis functions.</p>
+<p>We place the B-spline basis at <em>knots</em> (the knot is the centre of the basis function) and a basis function of order <span class="math inline">\(m+1\)</span> (where <span class="math inline">\(m=2\)</span> is a cubic spline, for boring definitional reasons) will be non-zero over the <span class="math inline">\(m+3\)</span> adjacent knots. This, along with the regular placement of knots (more on that in a moment) means that B-splines are a <em>local basis</em> (that their effects are felt only in the vicinity of their knot). This makes them easy to interpret (compared to, say, thin plate splines). <a href="#fig-bsbasis" class="quarto-xref">Figure&nbsp;4</a> shows some cubic B-spline basis functions.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># taken from Wood (2017)</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>bspline <span class="ot">&lt;-</span> <span class="cf">function</span>(x,k,i,<span class="at">m=</span><span class="dv">2</span>){</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># evaluate ith b-spline basis function of order m at the values</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># in x, given knot locations in k</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (m<span class="sc">==-</span><span class="dv">1</span>){ <span class="co"># base of recursion</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    res <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(x<span class="sc">&lt;</span>k[i<span class="sc">+</span><span class="dv">1</span>]<span class="sc">&amp;</span>x<span class="sc">&gt;=</span>k[i])</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  }<span class="cf">else</span>{</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># construct from call to lower order basis</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    z0 <span class="ot">&lt;-</span> (x<span class="sc">-</span>k[i])<span class="sc">/</span>(k[i<span class="sc">+</span>m<span class="sc">+</span><span class="dv">1</span>]<span class="sc">-</span>k[i])</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    z1 <span class="ot">&lt;-</span> (k[i<span class="sc">+</span>m<span class="sc">+</span><span class="dv">2</span>]<span class="sc">-</span>x)<span class="sc">/</span>(k[i<span class="sc">+</span>m<span class="sc">+</span><span class="dv">2</span>]<span class="sc">-</span>k[i<span class="sc">+</span><span class="dv">1</span>])</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    res <span class="ot">&lt;-</span> z0<span class="sc">*</span><span class="fu">bspline</span>(x,k,i,m<span class="dv">-1</span>)<span class="sc">+</span> z1<span class="sc">*</span><span class="fu">bspline</span>(x,k,i<span class="sc">+</span><span class="dv">1</span>,m<span class="dv">-1</span>)</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  res</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co"># knot locations</span></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>nk <span class="ot">&lt;-</span> <span class="dv">16</span></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>knts <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="fl">0.5</span>, <span class="fl">1.5</span>, <span class="at">length.out=</span>nk)</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="co"># grid for evaluation</span></span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>xx <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out=</span><span class="dv">200</span>)</span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.7</span>), <span class="at">type=</span><span class="st">"n"</span>,</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab=</span><span class="st">"x"</span>, <span class="at">ylab=</span><span class="st">"b(x)"</span>)</span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>nk){</span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lines</span>(xx, <span class="fu">bspline</span>(xx, knts, i, <span class="dv">2</span>), <span class="at">lty=</span><span class="dv">2</span>)</span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># taken from Wood (2017)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>bspline <span class="ot">&lt;-</span> <span class="cf">function</span>(x,k,i,<span class="at">m=</span><span class="dv">2</span>){</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># evaluate ith b-spline basis function of order m at the values</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># in x, given knot locations in k</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (m<span class="sc">==-</span><span class="dv">1</span>){ <span class="co"># base of recursion</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    res <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(x<span class="sc">&lt;</span>k[i<span class="sc">+</span><span class="dv">1</span>]<span class="sc">&amp;</span>x<span class="sc">&gt;=</span>k[i])</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  }<span class="cf">else</span>{</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># construct from call to lower order basis</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    z0 <span class="ot">&lt;-</span> (x<span class="sc">-</span>k[i])<span class="sc">/</span>(k[i<span class="sc">+</span>m<span class="sc">+</span><span class="dv">1</span>]<span class="sc">-</span>k[i])</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    z1 <span class="ot">&lt;-</span> (k[i<span class="sc">+</span>m<span class="sc">+</span><span class="dv">2</span>]<span class="sc">-</span>x)<span class="sc">/</span>(k[i<span class="sc">+</span>m<span class="sc">+</span><span class="dv">2</span>]<span class="sc">-</span>k[i<span class="sc">+</span><span class="dv">1</span>])</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    res <span class="ot">&lt;-</span> z0<span class="sc">*</span><span class="fu">bspline</span>(x,k,i,m<span class="dv">-1</span>)<span class="sc">+</span> z1<span class="sc">*</span><span class="fu">bspline</span>(x,k,i<span class="sc">+</span><span class="dv">1</span>,m<span class="dv">-1</span>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  res</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="co"># knot locations</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>nk <span class="ot">&lt;-</span> <span class="dv">16</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>knts <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="fl">0.5</span>, <span class="fl">1.5</span>, <span class="at">length.out=</span>nk)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="co"># grid for evaluation</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>xx <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out=</span><span class="dv">200</span>)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.7</span>), <span class="at">type=</span><span class="st">"n"</span>,</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab=</span><span class="st">"x"</span>, <span class="at">ylab=</span><span class="st">"b(x)"</span>)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>nk){</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lines</span>(xx, <span class="fu">bspline</span>(xx, knts, i, <span class="dv">2</span>), <span class="at">lty=</span><span class="dv">2</span>)</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div id="fig-bsbasis" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -415,17 +457,17 @@ window.Quarto = {
 <img src="adaptive_smoothing_files/figure-html/fig-bsbasis-1.png" class="img-fluid figure-img" width="672">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-bsbasis-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;1: A B-spline basis.
+Figure&nbsp;4: A B-spline basis.
 </figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>More in-depth information on B-splines can be found in classic texts like <span class="citation" data-cites="deboor_practical_1978">DeBoor (<a href="#ref-deboor_practical_1978" role="doc-biblioref">1978</a>)</span>. For more on their implementation in <code>mgcv</code> you can see Section 5.3.3 of <span class="citation" data-cites="wood_generalized_2017a">SN Wood (<a href="#ref-wood_generalized_2017a" role="doc-biblioref">2017</a>)</span> and <span class="citation" data-cites="wood_psplines_2017">Simon N Wood (<a href="#ref-wood_psplines_2017" role="doc-biblioref">2017</a>)</span>.</p>
+<p>More in-depth information on B-splines can be found in classic texts like <span class="citation" data-cites="deboor_practical_1978">DeBoor (<a href="#ref-deboor_practical_1978" role="doc-biblioref">1978</a>)</span>. For more on their implementation in <code>mgcv</code> you can see Section 5.3.3 of <span class="citation" data-cites="wood_generalized_2017a">Wood (<a href="#ref-wood_generalized_2017a" role="doc-biblioref">2017a</a>)</span> and <span class="citation" data-cites="wood_psplines_2017">Wood (<a href="#ref-wood_psplines_2017" role="doc-biblioref">2017b</a>)</span>.</p>
 </section>
 <section id="p-spline-difference-penalties" class="level2">
 <h2 class="anchored" data-anchor-id="p-spline-difference-penalties">P-spline difference penalties</h2>
-<p>Now we could use the regular formulation to create a penalty for these P-splines: we can take derivatives and integrate over the range of the covariate. Instead, we can do something a bit faster and more efficient. This speed an efficiency comes at a cost of accuracy, but this often doesn’t matter much.</p>
+<p>Now we could use the regular formulation to create a penalty for these P-splines: we can take derivatives and integrate over the range of the covariate. Instead, we can do something a bit faster and more efficient. This speed an efficiency comes at a cost of accuracy, but this often doesn’t matter much.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
 <p>Rather than the derivative-based penalties we usually use for splines, we’re going to use a <em>difference-based penalty</em>. Where the differences are between the neighbouring <span class="math inline">\(\beta\)</span>s in the model.</p>
 <p>The first order P-spline penalty is <span class="math display">\[\begin{equation}
         \mathcal{P}_1 = \sum_{k=1}^K (\beta_{k+1}-\beta_k)^2
@@ -437,15 +479,15 @@ Figure&nbsp;1: A B-spline basis.
                        0 &amp;  0 &amp; -1 &amp;  1 &amp; 0 &amp; \cdots\\
                          &amp;    &amp;    &amp; \ddots &amp; \ddots &amp; &amp; }
 \]</span> which just reflects the <span class="math inline">\(\beta_{k+1}-\beta_k\)</span> term, taking the previous value away from the current one. Indeed, <span class="math display">\[
-P\boldsymbol{\beta} = \pmatrix{\beta_2-\beta_1\\
+\mathbf{P}\boldsymbol{\beta} = \pmatrix{\beta_2-\beta_1\\
                                \beta_3-\beta_2\\
                                \beta_4-\beta_3\\
                                \vdots},
-\]</span> and in order to get our penalty <span class="math inline">\(\mathcal{P}_1\)</span>, we just need to take the product <span class="math inline">\(\mathbf{P}^\intercal P\)</span> <span class="math display">\[
+\]</span> and in order to get our penalty <span class="math inline">\(\mathcal{P}_1\)</span>, we just need to take the product <span class="math inline">\(\mathbf{P}^\intercal \mathbf{P}\)</span> <span class="math display">\[
 \mathcal{P}_1 = \boldsymbol{\beta}^\intercal \mathbf{P}^\intercal \mathbf{P}\boldsymbol{\beta} = \sum_{k=1}^K (\beta_{k+1}-\beta_k)^2.
 \]</span></p>
 <p>Our 2nd order penalty is <span class="math display">\[\begin{equation}
-        \mathcal{P}_2 = \sum_{k=1}^K (\beta_{k-1} -2\beta_k +\beta{i+1})^2
+        \mathcal{P}_2 = \sum_{k=1}^K (\beta_{k-1} -2\beta_k +\beta_{k+1})^2
 \label{bs-secondorder-pen}
 \end{equation}\]</span> which gives us the following <span class="math inline">\(\mathbf{P}\)</span> matrix: <span class="math display">\[
 \mathbf{P} = \pmatrix{1 &amp; -2 &amp;  1 &amp;  0 &amp; 0 &amp; \cdots\\
@@ -455,7 +497,7 @@ P\boldsymbol{\beta} = \pmatrix{\beta_2-\beta_1\\
 \]</span></p>
 <p>Now, these matrices are <em>extremely</em> fast to compute in R, because we just need to use the <code>diff</code> function on a diagonal matrix:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>(P1 <span class="ot">&lt;-</span> <span class="fu">diff</span>(<span class="fu">diag</span>(<span class="dv">10</span>), <span class="at">differences=</span><span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>(P1 <span class="ot">&lt;-</span> <span class="fu">diff</span>(<span class="fu">diag</span>(<span class="dv">10</span>), <span class="at">differences=</span><span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
  [1,]   -1    1    0    0    0    0    0    0    0     0
@@ -468,7 +510,7 @@ P\boldsymbol{\beta} = \pmatrix{\beta_2-\beta_1\\
  [8,]    0    0    0    0    0    0    0   -1    1     0
  [9,]    0    0    0    0    0    0    0    0   -1     1</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>(P2 <span class="ot">&lt;-</span> <span class="fu">diff</span>(<span class="fu">diag</span>(<span class="dv">10</span>), <span class="at">differences=</span><span class="dv">2</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>(P2 <span class="ot">&lt;-</span> <span class="fu">diff</span>(<span class="fu">diag</span>(<span class="dv">10</span>), <span class="at">differences=</span><span class="dv">2</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
 [1,]    1   -2    1    0    0    0    0    0    0     0
@@ -495,27 +537,27 @@ P\boldsymbol{\beta} = \pmatrix{\beta_2-\beta_1\\
 <p>Our aim is to make the smoothing parameter into a function that is smooth over the covariate. Fortunately we already have a tool for making smooth functions: splines. So via basis expansion: <span class="math display">\[\begin{equation}
         \boldsymbol{\lambda} = \mathbf{B}\boldsymbol{\gamma}
 \end{equation}\]</span> where <span class="math inline">\(\mathbf{B}\)</span> is the design matrix for the smoothing parameter (made of, you guess it, B-splines) and <span class="math inline">\(\boldsymbol{\gamma}\)</span> are the associated parameters. We’ll call this our <em>penalty basis</em>. Let the number of basis functions/knots used for <span class="math inline">\(\boldsymbol{\lambda}\)</span> be <span class="math inline">\(k_\lambda\)</span> (hence the number of columns in <span class="math inline">\(\mathbf{B}\)</span>).</p>
-<p>By the local property of the B-spline basis, we know that the columns of <span class="math inline">\(\mathbf{B}\)</span> will have non-zero entries around a given knot, then be zero elsewhere (assuming that <span class="math inline">\(\mathbf{B}\)</span> is evaluated over a sequence of evenly spaced points along the covariate).</p>
+<p>By the local property of the B-spline basis, we know that the columns of <span class="math inline">\(\mathbf{B}\)</span> will have non-zero entries around a given knot, then be zero elsewhere (assuming that <span class="math inline">\(\mathbf{B}\)</span> is evaluated over a sequence of evenly spaced points along the covariate). We can see this in <a href="#fig-bsbasis-mat" class="quarto-xref">Figure&nbsp;5</a>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># knot locations</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>nk <span class="ot">&lt;-</span> <span class="dv">10</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>nd <span class="ot">&lt;-</span> <span class="dv">100</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>knts <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="fl">0.5</span>, <span class="fl">1.5</span>, <span class="at">length.out=</span>nk)</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="co"># grid for evaluation</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>xx <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out=</span>nd)</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co">#bspline &lt;- function(x,k,i,m=2){</span></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>XX <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">xx =</span> xx,</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>                  <span class="at">knts =</span> knts[<span class="dv">2</span><span class="sc">:</span><span class="dv">6</span>])</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>XX<span class="sc">$</span>p <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">6</span>, bspline, <span class="at">x=</span>xx, <span class="at">k=</span>knts, <span class="at">m=</span><span class="dv">2</span>))</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(XX) <span class="sc">+</span></span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_tile</span>(<span class="fu">aes</span>(<span class="at">x=</span>knts, <span class="at">y=</span>xx, <span class="at">fill=</span>p)) <span class="sc">+</span></span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_reverse</span>() <span class="sc">+</span></span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradient</span>(<span class="at">low=</span><span class="st">"#fff"</span>, <span class="at">high=</span><span class="st">"#ff0000"</span>) <span class="sc">+</span></span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span></span>
-<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
-<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position=</span><span class="st">"none"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># knot locations</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>nk <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>nd <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>knts <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="fl">0.5</span>, <span class="fl">1.5</span>, <span class="at">length.out=</span>nk)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># grid for evaluation</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>xx <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out=</span>nd)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co">#bspline &lt;- function(x,k,i,m=2){</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>XX <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">xx =</span> xx,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>                  <span class="at">knts =</span> knts[<span class="dv">2</span><span class="sc">:</span><span class="dv">6</span>])</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>XX<span class="sc">$</span>p <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">6</span>, bspline, <span class="at">x=</span>xx, <span class="at">k=</span>knts, <span class="at">m=</span><span class="dv">2</span>))</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(XX) <span class="sc">+</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_tile</span>(<span class="fu">aes</span>(<span class="at">x=</span>knts, <span class="at">y=</span>xx, <span class="at">fill=</span>p)) <span class="sc">+</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_reverse</span>() <span class="sc">+</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradient</span>(<span class="at">low=</span><span class="st">"#fff"</span>, <span class="at">high=</span><span class="st">"#ff0000"</span>) <span class="sc">+</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position=</span><span class="st">"none"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div id="fig-bsbasis-mat" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -523,29 +565,29 @@ P\boldsymbol{\beta} = \pmatrix{\beta_2-\beta_1\\
 <img src="adaptive_smoothing_files/figure-html/fig-bsbasis-mat-1.png" class="img-fluid figure-img" width="672">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-bsbasis-mat-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;2: Visualisation of a B-spline basis design matrix.
+Figure&nbsp;5: Visualisation of a B-spline basis design matrix.
 </figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>We can show that <span class="math inline">\(\text{diag}(\boldsymbol{\lambda}) = \text{diag}(\mathbf{B}\boldsymbol{\gamma}) = \sum_j \boldsymbol{\gamma}_j \text{diag}(\mathbf{B}_{.j})\)</span> with basic linear algebra.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> So we can now write: <span class="math display">\[\begin{equation*}
+<p>We can show that <span class="math inline">\(\text{diag}(\boldsymbol{\lambda}) = \text{diag}(\mathbf{B}\boldsymbol{\gamma}) = \sum_j \boldsymbol{\gamma}_j \text{diag}(\mathbf{B}_{.j})\)</span> with basic linear algebra.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> So we can now write: <span class="math display">\[\begin{equation*}
 \boldsymbol{\beta}^\intercal \mathbf{P}^\intercal \text{diag}(\boldsymbol{\lambda}) \mathbf{P} \boldsymbol{\beta} = \boldsymbol{\beta}^\intercal \mathbf{P}^\intercal \text{diag}(\mathbf{B}\boldsymbol{\gamma}) \mathbf{P} \boldsymbol{\beta} = \sum_j \boldsymbol{\gamma}_j \boldsymbol{\beta}^\intercal \mathbf{P}^\intercal \text{diag}(\mathbf{B}_{.j}) \mathbf{P} \boldsymbol{\beta}
 \end{equation*}\]</span> Finally, let <span class="math inline">\(\mathbf{S}_j = \mathbf{P}^\intercal \text{diag}(\mathbf{B}_{.j}) \mathbf{P}\)</span>, we have that our penalty is: <span class="math display">\[
 \sum_j \gamma_j \boldsymbol{\beta}^\intercal \mathbf{S}_j \boldsymbol{\beta},
 \]</span> which is exactly the same form as <span class="math inline">\(\eqref{multpen}\)</span> but with the smoothing parameters <span class="math inline">\(\gamma_j\)</span> being the coefficients for our penalty basis.</p>
-<p><code>mgcv</code> can only really<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> use one kind of penalty and that’s the quadratic form we have in <span class="math inline">\(\eqref{multpen}\)</span>. So, its’ rather nice that we can work our adaptive penalty into this form. That means we can use all the usual tools in <code>mgcv</code> and not worry about extra fitting stuff.</p>
+<p><code>mgcv</code> can only really<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a> use one kind of penalty and that’s the quadratic form we have in <span class="math inline">\(\eqref{multpen}\)</span>. So, its’ rather nice that we can work our adaptive penalty into this form. That means we can use all the usual tools in <code>mgcv</code> and not worry about extra fitting stuff.</p>
 <p>Note that there is no penalty attached to <span class="math inline">\(\boldsymbol{\lambda}\)</span>’s parameters <span class="math inline">\(\boldsymbol{\gamma}\)</span> themselves we just have a continuous function, not any control on how wiggly it can be (though the size of <span class="math inline">\(k_\lambda\)</span> will constrain this to some extent).</p>
 </section>
 <section id="adaptive-smoothing-in-practice" class="level1">
 <h1>Adaptive smoothing in practice</h1>
-<p>Okay, with the maths out of the way, we can go back to our “motorcycle”<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> dataset.</p>
+<p>Okay, with the maths out of the way, we can go back to our “motorcycle”<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a> dataset.</p>
 <p>Given the above hoops, the setup of adaptive smooths in <code>mgcv</code> is very simple. We just need to set the basis to <code>"ad"</code> and we’re good to go:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>b_ad <span class="ot">&lt;-</span> <span class="fu">gam</span>(accel <span class="sc">~</span> <span class="fu">s</span>(times, <span class="at">bs=</span><span class="st">"ad"</span>), <span class="at">data=</span>mcycle)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>(<span class="fu">plot_mpreds</span>(b) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">"Thin-plate regression splines"</span>)) <span class="sc">+</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>(<span class="fu">plot_mpreds</span>(b_ad) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">"Adaptive smoothing via P-splines"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>b_ad <span class="ot">&lt;-</span> <span class="fu">gam</span>(accel <span class="sc">~</span> <span class="fu">s</span>(times, <span class="at">bs=</span><span class="st">"ad"</span>), <span class="at">data=</span>mcycle)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>(<span class="fu">plot_mpreds</span>(b) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">"Thin-plate regression splines"</span>)) <span class="sc">+</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>(<span class="fu">plot_mpreds</span>(b_ad) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">"Adaptive smoothing via P-splines"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div id="fig-tprsadcomp" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -553,13 +595,13 @@ Figure&nbsp;2: Visualisation of a B-spline basis design matrix.
 <img src="adaptive_smoothing_files/figure-html/fig-tprsadcomp-1.png" class="img-fluid figure-img" width="960">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tprsadcomp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;3: Comparison of thin-plate splines (left) and adaptive smoothing (right) for the motorcycle dataset.
+Figure&nbsp;6: Comparison of thin-plate splines (left) and adaptive smoothing (right) for the motorcycle dataset.
 </figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p><a href="#fig-tprsadcomp" class="quarto-xref">Figure&nbsp;3</a> shows a comparison of adaptive smoothing and our initial try with thin-plate regression splines. Not only does the adaptive smoother capture the flatness in either extreme of the data, we also have narrower confidence intervals.</p>
+<p><a href="#fig-tprsadcomp" class="quarto-xref">Figure&nbsp;6</a> shows a comparison of adaptive smoothing and our initial try with thin-plate regression splines. Not only does the adaptive smoother capture the flatness in either extreme of the data, we also have narrower confidence intervals.</p>
 <section id="more-options" class="level2">
 <h2 class="anchored" data-anchor-id="more-options">More options</h2>
 <p>There are a few things that we can change in the adaptive smoothing specification.</p>
@@ -573,7 +615,7 @@ Figure&nbsp;3: Comparison of thin-plate splines (left) and adaptive smoothing (r
 <section id="other-approaches-and-further-reading" class="level1">
 <h1>Other approaches and further reading</h1>
 <p>This approach is neat because it fits into the general <code>mgcv</code> scheme of fitting GAMs. That means we get to use all the other tools that are in <code>mgcv</code>. That said, lots of people have thought about this problem.</p>
-<p>An early approach to this problem is suggested in <span class="citation" data-cites="ruppert_spatiallyadaptive_2000">Ruppert and Carroll (<a href="#ref-ruppert_spatiallyadaptive_2000" role="doc-biblioref">2000</a>)</span>. Their approach is similar in some ways, but doesn’t use the nice properties of P-splines (for example they model the penalty basis on the <span class="math inline">\(\log_e\)</span> scale, which seems weird given the B-spline basis functions are positive). It feels a bit less elegant that what I describe above.@baladandayuthapani_spatially_2005 and <span class="citation" data-cites="crainiceanu_spatially_2007">Crainiceanu <em>et al.</em> (<a href="#ref-crainiceanu_spatially_2007" role="doc-biblioref">2007</a>)</span> build on this approach further. <span class="citation" data-cites="lang_bayesian_2004">Lang and Brezger (<a href="#ref-lang_bayesian_2004" role="doc-biblioref">2004</a>)</span> and <span class="citation" data-cites="jullion_robust_2007">Jullion and Lambert (<a href="#ref-jullion_robust_2007" role="doc-biblioref">2007</a>)</span> provide fully Bayesian approaches but again don’t quite get to the elegance of the above. <span class="citation" data-cites="yue_bayesian_2014">Yue <em>et al.</em> (<a href="#ref-yue_bayesian_2014" role="doc-biblioref">2014</a>)</span> propose a much more fancy version, again Bayesian, applying the SPDE approach in INLA. I need to think about that last paper more, but the approach involves things like formulating stochastic differential equations and words like “Galerkin approximation” so it will have to wait until a future date.</p>
+<p>An early approach to this problem is suggested in <span class="citation" data-cites="ruppert_spatiallyadaptive_2000">Ruppert and Carroll (<a href="#ref-ruppert_spatiallyadaptive_2000" role="doc-biblioref">2000</a>)</span>. Their approach is similar in some ways, but doesn’t use the nice properties of P-splines (for example they model the penalty basis on the <span class="math inline">\(\log_e\)</span> scale, which seems weird given the B-spline basis functions are positive). It feels a bit less elegant that what I describe above. <span class="citation" data-cites="baladandayuthapani_spatially_2005">Baladandayuthapani <em>et al.</em> (<a href="#ref-baladandayuthapani_spatially_2005" role="doc-biblioref">2005</a>)</span> and <span class="citation" data-cites="crainiceanu_spatially_2007">Crainiceanu <em>et al.</em> (<a href="#ref-crainiceanu_spatially_2007" role="doc-biblioref">2007</a>)</span> build on this approach further. <span class="citation" data-cites="lang_bayesian_2004">Lang and Brezger (<a href="#ref-lang_bayesian_2004" role="doc-biblioref">2004</a>)</span> and <span class="citation" data-cites="jullion_robust_2007">Jullion and Lambert (<a href="#ref-jullion_robust_2007" role="doc-biblioref">2007</a>)</span> provide fully Bayesian approaches but again don’t quite get to the elegance of the above. <span class="citation" data-cites="yue_bayesian_2014">Yue <em>et al.</em> (<a href="#ref-yue_bayesian_2014" role="doc-biblioref">2014</a>)</span> propose a much more fancy version, again Bayesian, applying the SPDE approach in INLA. I need to think about that last paper more, but the approach involves things like formulating stochastic differential equations and words like “Galerkin approximation” so it will have to wait until a future date.</p>
 </section>
 <section id="thanks" class="level1">
 <h1>Thanks</h1>
@@ -585,6 +627,9 @@ Figure&nbsp;3: Comparison of thin-plate splines (left) and adaptive smoothing (r
 
 
 <div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-baladandayuthapani_spatially_2005" class="csl-entry" role="listitem">
+Baladandayuthapani, V., Mallick, B. K. and Carroll, R. J. (2005) Spatially <span>Adaptive Bayesian Penalized Regression Splines</span> (<span class="nocase">P-splines</span>). <em>Journal of Computational and Graphical Statistics</em>, <strong>14</strong>, 378–394. DOI: <a href="https://doi.org/10.1198/106186005X47345">10.1198/106186005X47345</a>.
+</div>
 <div id="ref-crainiceanu_spatially_2007" class="csl-entry" role="listitem">
 Crainiceanu, C. M., Ruppert, D., Carroll, R. J., et al. (2007) Spatially <span>Adaptive Bayesian Penalized Splines With Heteroscedastic Errors</span>. <em>Journal of Computational and Graphical Statistics</em>, <strong>16</strong>, 265–288. DOI: <a href="https://doi.org/10.1198/106186007X208768">10.1198/106186007X208768</a>.
 </div>
@@ -610,10 +655,10 @@ Schmidt, G., Mattern, R. and Schüler, F. (1981) Biomechanical investigation to 
 Silverman, B. W. (1985) Some <span>Aspects</span> of the <span>Spline Smoothing Approach</span> to <span>Non-Parametric Regression Curve Fitting</span>. <em>Journal of the Royal Statistical Society. Series B (Methodological)</em>, <strong>47</strong>, 1–52.
 </div>
 <div id="ref-wood_generalized_2017a" class="csl-entry" role="listitem">
-Wood, S. N. (2017) <em>Generalized <span>Additive Models</span>. <span>An Introduction</span> with <span>R</span></em>. 2nd ed. Texts in <span>Statistical Science</span>. CRC Press.
+Wood, S. N. (2017a) <em>Generalized <span>Additive Models</span>. <span>An Introduction</span> with <span>R</span></em>. 2nd ed. Texts in <span>Statistical Science</span>. CRC Press.
 </div>
 <div id="ref-wood_psplines_2017" class="csl-entry" role="listitem">
-Wood, Simon N. (2017) P-splines with derivative based penalties and tensor product smoothing of unevenly distributed data. <em>Statistics and Computing</em>, <strong>27</strong>, 985–989. DOI: <a href="https://doi.org/w">w</a>.
+Wood, S. N. (2017b) P-splines with derivative based penalties and tensor product smoothing of unevenly distributed data. <em>Statistics and Computing</em>, <strong>27</strong>, 985–989. DOI: <a href="https://doi.org/w">w</a>.
 </div>
 <div id="ref-yue_bayesian_2014" class="csl-entry" role="listitem">
 Yue, Y. R., Simpson, D., Lindgren, F., et al. (2014) Bayesian <span>Adaptive Smoothing Splines Using Stochastic Differential Equations</span>. <em>Bayesian Analysis</em>, <strong>9</strong>, 397–424. DOI: <a href="https://doi.org/10.1214/13-BA866">10.1214/13-BA866</a>.
@@ -622,9 +667,11 @@ Yue, Y. R., Simpson, D., Lindgren, F., et al. (2014) Bayesian <span>Adaptive Smo
 
 <ol>
 <li id="fn1"><p>Though this report doesn’t appear to be findable, one can find a rather gruesome NATO conference proceedings from around the same time by the same authors which appears to demonstrate the same ideas <a href="https://apps.dtic.mil/sti/tr/pdf/ADA123814.pdf#page=58">here</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2"><p>The first element of the column vector <span class="math inline">\(\mathbf{B}\boldsymbol{\gamma}\)</span> is <span class="math inline">\(\mathbf{B}_{11}\lambda_1 +\mathbf{B}_{12}\lambda_2 + \ldots = \sum_j \lambda_j \mathbf{B}_{1j}\)</span> and so on for the second row etc.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn3"><p>There is a more complicated way but I’ll save that for another article.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn4"><p>Read “traumatic head injury”<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Different authors call these different things. Here I’m saying “P-splines” are “B-splines with a difference-based penalty”. Other people will say other things.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>This is really just because we’re going to directly penalize the coefficient values rather than look at the integral of the basis functions over the range of the data. There is some mention in the literature (e.g., the <a href="https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/mgcv-FAQ.html"><code>mgcv</code> FAQ</a> question 10) that indicates that this might be the case.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>The first element of the column vector <span class="math inline">\(\mathbf{B}\boldsymbol{\gamma}\)</span> is <span class="math inline">\(\mathbf{B}_{11}\lambda_1 +\mathbf{B}_{12}\lambda_2 + \ldots = \sum_j \lambda_j \mathbf{B}_{1j}\)</span> and so on for the second row etc.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>There is a more complicated way but I’ll save that for another article.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>Read “traumatic head injury”<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
