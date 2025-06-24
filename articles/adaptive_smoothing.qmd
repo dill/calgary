@@ -16,9 +16,45 @@ When we set-up a smoother in a GAM, we have a penalty that is of the following m
 \lambda \boldsymbol{\beta}^\intercal \mathbf{S} \boldsymbol{\beta}.
 \label{pen}
 \end{equation}
-where we have the fixed elements (usually integrals of derivatives of the basis functions) in $\mathbf{S}$ and the smoothers' coefficients in $\boldsymbol{\beta}$. \lambda is the *smoothing parameter* which we also estimate and controls the influence of the penalty on the fit (usually, we have the above expression substracted from the restricted or marginal likelihood for REML or ML).
+where we have the fixed elements (usually integrals of derivatives of the basis functions) in $\mathbf{S}$ and the smoothers' coefficients in $\boldsymbol{\beta}$. $\lambda$ is the *smoothing parameter* which we also estimate and controls the influence of the penalty on the fit (usually, we have the above expression subtracted from the restricted or marginal likelihood for REML or ML).
 
-The smoothing parameter, $\lambda$, tells us about how *wiggly* to make our functions. A $\lambda$ of 0 will mean that the whole penalty term is evaluated as zero, meaning the smother will overfit to the data. Letting $\lambda$ get larger and larger, we end up with the penalty dominating the fit. In that case we retrieve only the nullspace terms: those bits of the basis which don't have derivatives (so aren't affected by the penalty).
+The smoothing parameter, $\lambda$, tells us about how *wiggly* to make our functions. A $\lambda$ of 0 will mean that the whole penalty term is evaluated as zero, meaning the smother will overfit to the data. Letting $\lambda$ get larger and larger, we end up with the penalty dominating the fit. In that case we retrieve only the nullspace terms: those bits of the basis which don't have derivatives (so aren't affected by the penalty). This is shown in @fig-mr-wiggles.
+
+
+
+```{r fig-mr-wiggles, fig.width=10, fig.height=4, echo=FALSE, message=FALSE}
+#| fig.cap: Data (black dots) are generated from the blue line. In the left plot we have $\lambda$ be estimated. The middle plot shows that when the smoothing parameter is set to zero we get overfitting since the model is unpenalized. The right plot shows what happens when the penalty dominates and all the wiggles are removed from the model, leaving only the slope term which doesn't have second derivatives (which are used for the penalty in this case).
+
+library(mgcv)
+
+# hacked from the example in ?gam
+set.seed(2) ## simulate some data...·
+dat <- gamSim(1,n=50,dist="normal",scale=0.5, verbose=FALSE)
+dat$y <- dat$f2 + rnorm(length(dat$f2), sd = sqrt(0.5))
+f2 <- function(x) 0.2*x^11*(10*(1-x))^6+10*(10*x)^3*(1-x)^10-mean(dat$y)
+ylim <- c(-4,6)
+
+# fit some models
+b.justright <- gam(y~s(x2),data=dat)
+b.sp0 <- gam(y~s(x2, sp=0, k=50),data=dat)
+b.spinf <- gam(y~s(x2),data=dat, sp=1e10)
+
+# make three plots, w. estimated smooth, truth and data on each
+par(mfrow=c(1,3), mar=c(5,5,5,2))
+
+plot(b.justright, se=FALSE, ylim=ylim,
+     main=expression(lambda*plain("= just right")), lwd=1.5)
+points(dat$x2, dat$y-mean(dat$y), pch=19)
+curve(f2,0,1, col="blue", add=TRUE, lwd=1.5)
+
+plot(b.sp0, se=FALSE, ylim=ylim, main=expression(lambda*plain("=")*0), lwd=1.5)
+points(dat$x2, dat$y-mean(dat$y), pch=19)
+curve(f2,0,1, col="blue", add=TRUE, lwd=1.5)
+
+plot(b.spinf, se=FALSE, ylim=ylim,                                              main=expression(lambda*plain("=")*infinity), lwd=1.5)
+points(dat$x2, dat$y-mean(dat$y), pch=19)
+curve(f2,0,1, col="blue", add=TRUE, lwd=1.5)
+```
 
 This all works well in general, up to a point. What happens when the amount of smoothing we need changes with the covariate? In other words: what if we need the amount of smoothing to be adaptive?
 
@@ -26,9 +62,10 @@ Most of this is based off Sections 5.33 and 5.3.5 of @wood_generalized_2017a as 
 
 # An overused example: motorcycle crash data
 
-Every expanation of adaptive smoothing uses the same tired example. This article is no different. The "simulated motorcycle crash data" found in `MASS::mcycle` seems to originate (in the statistics literature) in @silverman_aspects_1985 (which is a great paper!). The data originally come from a rather grim experiment [@schmidt1981biomechanical]^[Though this report doesn't appear to be findable, one can find a rather gruesome NATO conference proceedings from around the same time by the same authors which appears to demonstrate the same ideas [here](https://apps.dtic.mil/sti/tr/pdf/ADA123814.pdf#page=58)] where cadavers were given helments and hurled at walls to see what happens on impact. For our purposes, we are interested in the accelaration change recorded on sensors on the helmet.
+Every expanation of adaptive smoothing uses the same tired example. This article is no different. The "simulated motorcycle crash data" found in `MASS::mcycle` seems to originate (in the statistics literature) in @silverman_aspects_1985 (which is a great paper!). The data originally come from a rather grim experiment [@schmidt1981biomechanical]^[Though this report doesn't appear to be findable, one can find a rather gruesome NATO conference proceedings from around the same time by the same authors which appears to demonstrate the same ideas [here](https://apps.dtic.mil/sti/tr/pdf/ADA123814.pdf#page=58)] where cadavers were given helments and hurled at walls to see what happens on impact. For our purposes, we are interested in the accelaration change recorded on sensors on the helmet. We see the data in @fig-mcycle.
 
-```{r mcycle, message=FALSE}
+```{r fig-mcycle, message=FALSE}
+#| fig.cap: The "motorcycle data". These show the acceleration felt by sensors on the helmets of cadavers as they make impact with a wall.
 library(MASS)
 library(ggplot2)
 library(patchwork)
@@ -47,16 +84,26 @@ We can fit the data using a regular smoother and see what happens:
 library(mgcv)
 
 b <- gam(accel ~ s(times), data=mcycle)
+```
 
+I'll write a little plotting function to make life easier
+
+```{r plotter}
+# plotting function
 plot_mpreds <- function(model){
+  # prediction grid
   xx <- data.frame(times = seq(0, 60, length.out=400))
+  # make the predictions
   pp <- predict(model, newdata=xx, se=TRUE)
 
+  # add predictions to the grid
   xx$accel <- as.vector(pp$fit)
+  # approximate confidence bands
   xx$upper <- as.vector(pp$fit + 1.96*pp$se.fit)
   xx$lower <- as.vector(pp$fit - 1.96*pp$se.fit)
 
- ggplot() +
+  # create the plot itself
+  ggplot() +
     geom_point(aes(x=times, y=accel), data=mcycle) +
     geom_ribbon(aes(x=times, ymin=lower, ymax=upper),
                 colour="grey60", alpha=0.5,
@@ -69,7 +116,7 @@ plot_mpreds <- function(model){
 plot_mpreds(b)
 ```
 
-What we see in this simple fit is some annoying misbehaviour in either extreme of the data. Why is the smoother decreasing at from zero, only to increase again before impact? At the other end, why do we see such wiggly behaviour followed by increase? These features aren't supported by the data.
+What we see in this simple fit is some annoying misbehaviour in the extremes of the data. Why is the smoother decreasing from zero, only to increase again before impact? At the other end, why do we see such wiggly behaviour followed by increase? These features aren't supported by the data.
 
 This is really down to the smoothing parameter being optimized for the bulk of the data, which is quite wiggly (and where we fit well). We are stuck with the $\lambda$ which does best "on average", so our model sucks at either end of the data.
 
@@ -77,25 +124,38 @@ But, what if we could make $\lambda$ a function of the time covariate?
 
 # Adaptive smoothing: tools we need
 
-Let's imagine a very simple case, where we have data where the first half is very wiggly, then the second half is less wiggly. We would then want a separate smoothing parameter for the first half of the data (which was smaller, giving more wiggles) and another for the second half (larger, giving fewer wiggles). The first smoothing parameter would just apply to the first half of the basis functions and the latter to the second half (assuming we have a nice evenly-spaced basis; more on that in a moment).
+In the case above, we might imagine the case where we want to use, say, three smoothing parameters. Looking at @fig-mcyclesp, we think we see a change in the amount of smoothing necessary at say 14ms (up to impact) and then again at 41ms (after rebound).
 
-We might want to go beyond that and move to multiple $\lambda$s over the range of the data. We need some tools to build such a thing.
+```{r fig-mcyclesp, message=FALSE}
+#| fig.cap: Where we might have differing smoothing in the "motorcycle data".
+
+ggplot(mcycle) +
+  geom_point(aes(x=times, y=accel)) +
+  geom_vline(xintercept=14, lty=2) +
+  geom_vline(xintercept=41, lty=2) +
+  labs(x="Time (ms)", y="Acceleration (g)") +
+  theme_minimal()
+```
+
+Obviously it would be better to estimate this from the data rather than coming up with arbitrary cut-offs. To do that we're going to need some generic tools...
+
 
 ## Multiple penalties
 
 First we need to build a penalty for such a term. We can extend \eqref{pen} to the case where we have multiple penalties for a single term. In which case we write
 \begin{equation}
-  \sum_j \lambda_j \boldsymbol{\beta}^\intercal \mathbf{S}_j \boldsymbol{\beta},
+  \sum_j \lambda_j \boldsymbol{\beta}^\intercal \mathbf{S}_j \boldsymbol{\beta}.
 \label{multpen}
 \end{equation}
-where we have split the penalty matrices and smoothing parameters and indexed them by $j$. This idea should be fairly familiar as it's how we create the total penalty for models with multiple terms. Just in this case, we're using it for a single term.
+This idea should be fairly familiar as it's how we create the total penalty for models with multiple terms.
 
 
 ## P-splines
 
-We need a basis to build our terms. For efficiency and interpretability purposes, `mgcv` uses P-splines [@eilers_flexible_1996] to construct adaptive smoothers. Since they're a bit different from other splines, let's just review them for a moment.
+We need a basis to build our terms. For efficiency and interpretability purposes, `mgcv` uses P-splines^[Different authors call these different things. Here I'm saying "P-splines" are "B-splines with a difference-based penalty". Other people will say other things.] [@eilers_flexible_1996] by default to construct adaptive smoothers (see below for other options). Since they're a bit different from other splines, let's just review them for a moment.
 
 "P-splines" in the sense used in `mgcv` are Marx and Eiler's "B-splines": they are a B-spline basis with a "difference" penalty (rather than an integral penalty). This makes things much faster for computation.
+
 
 ## B-spline basis
 
@@ -140,7 +200,7 @@ More in-depth information on B-splines can be found in classic texts like @deboo
 
 ## P-spline difference penalties
 
-Now we could use the regular formulation to create a penalty for these P-splines: we can take derivatives and integrate over the range of the covariate. Instead, we can do something a bit faster and more efficient. This speed an efficiency comes at a cost of accuracy, but this often doesn't matter much.
+Now we could use the regular formulation to create a penalty for these P-splines: we can take derivatives and integrate over the range of the covariate. Instead, we can do something a bit faster and more efficient. This speed an efficiency comes at a cost of accuracy, but this often doesn't matter much.^[This is really just because we're going to directly penalize the coefficient values rather than look at the integral of the basis functions over the range of the data. There is some mention in the literature (e.g., the [`mgcv` FAQ](https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/mgcv-FAQ.html) question 10) that indicates that this might be the case.]
 
 Rather than the derivative-based penalties we usually use for splines, we're going to use a *difference-based penalty*. Where the differences are between the neighbouring $\beta$s in the model.
 
@@ -160,19 +220,19 @@ $$
 $$
 which just reflects the $\beta_{k+1}-\beta_k$ term, taking the previous value away from the current one. Indeed,
 $$
-P\boldsymbol{\beta} = \pmatrix{\beta_2-\beta_1\\
+\mathbf{P}\boldsymbol{\beta} = \pmatrix{\beta_2-\beta_1\\
                                \beta_3-\beta_2\\
                                \beta_4-\beta_3\\
                                \vdots},
 $$
-and in order to get our penalty $\mathcal{P}_1$, we just need to take the product $\mathbf{P}^\intercal P$
+and in order to get our penalty $\mathcal{P}_1$, we just need to take the product $\mathbf{P}^\intercal \mathbf{P}$
 $$
 \mathcal{P}_1 = \boldsymbol{\beta}^\intercal \mathbf{P}^\intercal \mathbf{P}\boldsymbol{\beta} = \sum_{k=1}^K (\beta_{k+1}-\beta_k)^2.
 $$
 
 Our 2nd order penalty is
 \begin{equation}
-        \mathcal{P}_2 = \sum_{k=1}^K (\beta_{k-1} -2\beta_k +\beta{i+1})^2
+        \mathcal{P}_2 = \sum_{k=1}^K (\beta_{k-1} -2\beta_k +\beta_{k+1})^2
 \label{bs-secondorder-pen}
 \end{equation}
 which gives us the following $\mathbf{P}$ matrix:
@@ -211,9 +271,9 @@ Our aim is to make the smoothing parameter into a function that is smooth over t
 \end{equation}
 where $\mathbf{B}$ is the design matrix for the smoothing parameter (made of, you guess it, B-splines) and $\boldsymbol{\gamma}$ are the associated parameters. We'll call this our *penalty basis*. Let the number of basis functions/knots used for $\boldsymbol{\lambda}$ be $k_\lambda$ (hence the number of columns in $\mathbf{B}$).
 
-By the local property of the B-spline basis, we know that the columns of $\mathbf{B}$ will have non-zero entries around a given knot, then be zero elsewhere (assuming that $\mathbf{B}$ is evaluated over a sequence of evenly spaced points along the covariate).
+By the local property of the B-spline basis, we know that the columns of $\mathbf{B}$ will have non-zero entries around a given knot, then be zero elsewhere (assuming that $\mathbf{B}$ is evaluated over a sequence of evenly spaced points along the covariate). We can see this in @fig-bsbasis-mat.
 
-```{r bspline-basis-fig}
+```{r}
 #| label: fig-bsbasis-mat
 #| fig.cap: Visualisation of a B-spline basis design matrix.
 # knot locations
@@ -282,7 +342,7 @@ Note that adaptive smoothers can't be used with `gamm` or as marginals in tensor
 
 This approach is neat because it fits into the general `mgcv` scheme of fitting GAMs. That means we get to use all the other tools that are in `mgcv`. That said, lots of people have thought about this problem.
 
-An early approach to this problem is suggested in @ruppert_spatiallyadaptive_2000. Their approach is similar in some ways, but doesn't use the nice properties of P-splines (for example they model the penalty basis on the $\log_e$ scale, which seems weird given the B-spline basis functions are positive). It feels a bit less elegant that what I describe above.@baladandayuthapani_spatially_2005 and @crainiceanu_spatially_2007 build on this approach further. @lang_bayesian_2004 and @jullion_robust_2007 provide fully Bayesian approaches but again don't quite get to the elegance of the above. @yue_bayesian_2014 propose a much more fancy version, again Bayesian, applying the SPDE approach in INLA. I need to think about that last paper more, but the approach involves things like formulating stochastic differential equations and words like "Galerkin approximation" so it will have to wait until a future date.
+An early approach to this problem is suggested in @ruppert_spatiallyadaptive_2000. Their approach is similar in some ways, but doesn't use the nice properties of P-splines (for example they model the penalty basis on the $\log_e$ scale, which seems weird given the B-spline basis functions are positive). It feels a bit less elegant that what I describe above. @baladandayuthapani_spatially_2005 and @crainiceanu_spatially_2007 build on this approach further. @lang_bayesian_2004 and @jullion_robust_2007 provide fully Bayesian approaches but again don't quite get to the elegance of the above. @yue_bayesian_2014 propose a much more fancy version, again Bayesian, applying the SPDE approach in INLA. I need to think about that last paper more, but the approach involves things like formulating stochastic differential equations and words like "Galerkin approximation" so it will have to wait until a future date.
 
 # Thanks
 
