@@ -61,6 +61,11 @@ jobs:
                   "patchwork"
                 ))'
 
+      - name: pre-setup for quarto
+        run: |
+          quarto publish gh-pages
+          echo "QUARTO_OUTPUT=_site" >> $GITHUB_ENV
+          quarto render
       - name: Publish to GitHub Pages (and render)
         uses: quarto-dev/quarto-actions/publish@v2
         with:
