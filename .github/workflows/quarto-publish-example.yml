@@ -65,8 +65,8 @@ jobs:
 
       - name: pre-setup for quarto
         run: |
-          quarto render calgary
-          quarto publish $TARGET calgary --no-browser
+          quarto render
+          quarto publish gh-pages --no-browser
 #      - name: Publish to GitHub Pages (and render)
 #        uses: quarto-dev/quarto-actions/publish@v2
 #        with:
