@@ -63,7 +63,7 @@ jobs:
 
       - name: pre-setup for quarto
         run: |
-          quarto publish gh-pages
+          quarto publish calgary gh-pages
           echo "QUARTO_OUTPUT=_site" >> $GITHUB_ENV
           quarto render
       - name: Publish to GitHub Pages (and render)
