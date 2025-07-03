@@ -3,6 +3,7 @@ on:
     branches: main
 permissions:
   contents: write
+  pages: write
 
 # this secret is always available for github actions
 env:
@@ -10,11 +11,6 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 name: Render and Publish
-
-# you need these permissions to publish to GitHub pages
-# permissions: 
-#     contents: write
-#     pages: write
 
 jobs:
   build-deploy:
@@ -68,7 +64,6 @@ jobs:
       - name: render and publish
         run: |
           quarto render
-          git branch gh-pages
           quarto publish gh-pages --no-browser
 #      - name: Publish to GitHub Pages (and render)
 #        uses: quarto-dev/quarto-actions/publish@v2
