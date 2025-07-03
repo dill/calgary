@@ -95,7 +95,7 @@ div.csl-indent {
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-a98ec624fb63d9b712fc3a6f62e2b305.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-cf6166c893c2d932d241f30071efce7e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -428,8 +428,8 @@ Parametric coefficients:
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Approximate significance of smooth terms:
-           edf Ref.df     F p-value    
-s(ndate) 14.87  17.11 22.55  &lt;2e-16 ***
+           edf Ref.df    F p-value    
+s(ndate) 14.87  17.11 22.5  &lt;2e-16 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -520,13 +520,13 @@ Parametric coefficients:
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Approximate significance of smooth terms:
-           edf Ref.df    F p-value    
-s(ndate) 2.694  2.694 8.06 0.00053 ***
+           edf Ref.df     F p-value    
+s(ndate) 2.694  2.694 6.116 0.00053 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 R-sq.(adj) =  0.338   
-  Scale est. = 8.2245    n = 365</code></pre>
+  Scale est. = 8.2244    n = 365</code></pre>
 </div>
 </div>
 <p>Note that the effective degrees of freedom have decreased from 15.87 to 3.69, so we expect that the resulting smooth will be much… smoother :)</p>
@@ -535,24 +535,21 @@ R-sq.(adj) =  0.338
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># install mgcvUtils</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">"dill/mgcvUtils"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Using github PAT from envvar GITHUB_TOKEN. Use `gitcreds::gitcreds_set()` and unset GITHUB_TOKEN in .Renviron (or elsewhere) if you want to use the more secure git credential store instead.</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
 <pre><code>Skipping install of 'mgcvUtils' from a github remote, the SHA1 (c36c58ac) has not changed since last install.
   Use `force = TRUE` to force installation</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcvUtils)</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b1<span class="sc">$</span>gam, bal_2019,</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b1"</span>, <span class="at">ci_label=</span><span class="st">"pred_b1"</span>)</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019) <span class="sc">+</span></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b1), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b1_u, <span class="at">ymin=</span>pred_b1_l),</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcvUtils)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b1<span class="sc">$</span>gam, bal_2019,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b1"</span>, <span class="at">ci_label=</span><span class="st">"pred_b1"</span>)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019) <span class="sc">+</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b1), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b1_u, <span class="at">ymin=</span>pred_b1_l),</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -563,13 +560,13 @@ R-sq.(adj) =  0.338
 </div>
 <p>That’s a lot smoother. We have an AR parameters of:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>b1<span class="sc">$</span>lme<span class="sc">$</span>modelStruct<span class="sc">$</span>corStruct</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>b1<span class="sc">$</span>lme<span class="sc">$</span>modelStruct<span class="sc">$</span>corStruct</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Correlation structure of class corARMA representing
         Phi1         Phi2         Phi3         Phi4         Phi5         Phi6 
- 0.799478706 -0.020660275 -0.008209886  0.041636043  0.005374399 -0.066563555 
+ 0.799479439 -0.020661745 -0.008212782  0.041640033  0.005374396 -0.066563900 
         Phi7         Phi8         Phi9        Phi10 
- 0.029103710 -0.020105682  0.031664372 -0.003268618 </code></pre>
+ 0.029101288 -0.020098370  0.031653960 -0.003262715 </code></pre>
 </div>
 </div>
 <p>indicating strong positive correlation between the data at a lag of 1, then smaller correlations at further lags.</p>
@@ -589,18 +586,18 @@ indices of points to predict, with corresponding endpoints `mi`. So
 neighbourhood j.</code></pre>
 <p>We’re going to create a moving-window-type approach, for the 20 observations either side of each datum. In the literature, this is often referred to as “blocked CV” <span class="citation" data-cites="liuUsingCrossvalidationMethods2024 snijdersCrossValidationPredictorEvaluation1988">(<a href="#ref-liuUsingCrossvalidationMethods2024" role="doc-biblioref">Liu and Zhou, 2024</a>; <a href="#ref-snijdersCrossValidationPredictorEvaluation1988" role="doc-biblioref">Snijders, 1988</a>)</span>. We can do that relatively easily (though maybe somewhat cryptically) using the below code.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>nei <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>start <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="dv">1</span>, (<span class="dv">1</span><span class="sc">:</span><span class="dv">365</span>)<span class="sc">-</span><span class="dv">20</span>)</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>end <span class="ot">&lt;-</span> <span class="fu">pmin</span>(<span class="dv">365</span>, (<span class="dv">0</span><span class="sc">:</span><span class="dv">364</span>)<span class="sc">+</span><span class="dv">20</span>)</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">365</span>, \(x) start[x]<span class="sc">:</span>end[x])</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">unlist</span>(nt)</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(<span class="fu">lapply</span>(nt, length))</span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>i <span class="ot">&lt;-</span> nei<span class="sc">$</span>k</span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> nei<span class="sc">$</span>m</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>nei <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>start <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="dv">1</span>, (<span class="dv">1</span><span class="sc">:</span><span class="dv">365</span>)<span class="sc">-</span><span class="dv">20</span>)</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>end <span class="ot">&lt;-</span> <span class="fu">pmin</span>(<span class="dv">365</span>, (<span class="dv">0</span><span class="sc">:</span><span class="dv">364</span>)<span class="sc">+</span><span class="dv">20</span>)</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">365</span>, \(x) start[x]<span class="sc">:</span>end[x])</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">unlist</span>(nt)</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(<span class="fu">lapply</span>(nt, length))</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>i <span class="ot">&lt;-</span> nei<span class="sc">$</span>k</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> nei<span class="sc">$</span>m</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>One issue with setting these neighbourhoods up is that we aren’t 100% sure whether the computer is doing what we want. I made a wee tool to visualise this for time series (at least) to check what the cross-validation structure you created looks right. You can find that as part of the <code>mgcvUtils</code> package <a href="https://github.com/dill/mgcvUtils">on github here</a>. We can then pass the neighbourhood structure to it and see what it produces:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vis_nei</span>(nei)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vis_nei</span>(nei)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -612,8 +609,8 @@ neighbourhood j.</code></pre>
 <p>The horizontal axis indexes the data, the vertical gives the fold. So for the first fold (bottom row) we see the 20 observations after the first, with the window increasing its width until we get a full 40 data included in the block. We can see here that the elements to drop and predict (“Both”) form a band over the data<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. The uncoloured part of the data is used to fit the model.</p>
 <p>Now we’re happy with the neighbourhood structure, we can proceed to model fitting.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>b2 <span class="ot">&lt;-</span> <span class="fu">gam</span>(COSMOS_VWC <span class="sc">~</span> <span class="fu">s</span>(ndate, <span class="at">k=</span><span class="dv">20</span>), <span class="at">data=</span>bal_2019, <span class="at">method=</span><span class="st">"NCV"</span>, <span class="at">nei=</span>nei)</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(b2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>b2 <span class="ot">&lt;-</span> <span class="fu">gam</span>(COSMOS_VWC <span class="sc">~</span> <span class="fu">s</span>(ndate, <span class="at">k=</span><span class="dv">20</span>), <span class="at">data=</span>bal_2019, <span class="at">method=</span><span class="st">"NCV"</span>, <span class="at">nei=</span>nei)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(b2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Family: gaussian 
@@ -637,16 +634,16 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 R-sq.(adj) =  0.525   Deviance explained = 54.8%
 NCV = 2181.3  Scale est. = 5.6974    n = 365</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b2, bal_2019,</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b2"</span>, <span class="at">ci_label=</span><span class="st">"pred_b2"</span>)</span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019) <span class="sc">+</span></span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b2), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
-<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b2_u, <span class="at">ymin=</span>pred_b2_l),</span>
-<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
-<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b2, bal_2019,</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b2"</span>, <span class="at">ci_label=</span><span class="st">"pred_b2"</span>)</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019) <span class="sc">+</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b2), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b2_u, <span class="at">ymin=</span>pred_b2_l),</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -658,28 +655,28 @@ NCV = 2181.3  Scale est. = 5.6974    n = 365</code></pre>
 <p>Well that looks quite nice! Note the reduced confidence band width!</p>
 <p>Let’s plot all three models together (with a bit of data fiddling to get that right):</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>bal_2019_base <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">DATE_TIME=</span>bal_2019<span class="sc">$</span>DATE_TIME,</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>                            <span class="at">pred =</span> bal_2019<span class="sc">$</span>COSMOS_VWC,</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>                            <span class="at">model =</span> <span class="st">"Observed VWC"</span>,</span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>                            <span class="at">ci_u =</span> <span class="cn">NA</span>, <span class="at">ci_l=</span><span class="cn">NA</span>)</span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>bal_2019_plot <span class="ot">&lt;-</span> <span class="fu">rbind</span>(bal_2019_base,</span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>                       <span class="fu">pred_with_ci</span>(b0, bal_2019_base, <span class="at">label=</span><span class="st">"Simple GAM"</span>,</span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">label_label=</span><span class="st">"model"</span>),</span>
-<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>                       <span class="fu">pred_with_ci</span>(b1<span class="sc">$</span>gam, bal_2019_base, <span class="at">label=</span><span class="st">"GAMM"</span>,</span>
-<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">label_label=</span><span class="st">"model"</span>),</span>
-<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>                       <span class="fu">pred_with_ci</span>(b2, bal_2019_base, <span class="at">label=</span><span class="st">"NCV GAM"</span>,</span>
-<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">label_label=</span><span class="st">"model"</span>))</span>
-<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019_plot) <span class="sc">+</span></span>
-<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred, <span class="at">group=</span>model, <span class="at">colour=</span>model),</span>
-<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>            <span class="at">lwd=</span><span class="fl">0.7</span>) <span class="sc">+</span></span>
-<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>ci_u, <span class="at">ymin=</span>ci_l,</span>
-<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>                  <span class="at">group=</span>model, <span class="at">fill=</span>model),</span>
-<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>              <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">colour=</span><span class="st">"Model"</span>, <span class="at">fill=</span><span class="st">"Model"</span>, <span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
-<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position=</span><span class="st">"bottom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>bal_2019_base <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">DATE_TIME=</span>bal_2019<span class="sc">$</span>DATE_TIME,</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>                            <span class="at">pred =</span> bal_2019<span class="sc">$</span>COSMOS_VWC,</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>                            <span class="at">model =</span> <span class="st">"Observed VWC"</span>,</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>                            <span class="at">ci_u =</span> <span class="cn">NA</span>, <span class="at">ci_l=</span><span class="cn">NA</span>)</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>bal_2019_plot <span class="ot">&lt;-</span> <span class="fu">rbind</span>(bal_2019_base,</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>                       <span class="fu">pred_with_ci</span>(b0, bal_2019_base, <span class="at">label=</span><span class="st">"Simple GAM"</span>,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">label_label=</span><span class="st">"model"</span>),</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>                       <span class="fu">pred_with_ci</span>(b1<span class="sc">$</span>gam, bal_2019_base, <span class="at">label=</span><span class="st">"GAMM"</span>,</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">label_label=</span><span class="st">"model"</span>),</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>                       <span class="fu">pred_with_ci</span>(b2, bal_2019_base, <span class="at">label=</span><span class="st">"NCV GAM"</span>,</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">label_label=</span><span class="st">"model"</span>))</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019_plot) <span class="sc">+</span></span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred, <span class="at">group=</span>model, <span class="at">colour=</span>model),</span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>            <span class="at">lwd=</span><span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>ci_u, <span class="at">ymin=</span>ci_l,</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>                  <span class="at">group=</span>model, <span class="at">fill=</span>model),</span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>              <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">colour=</span><span class="st">"Model"</span>, <span class="at">fill=</span><span class="st">"Model"</span>, <span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position=</span><span class="st">"bottom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning in max(ids, na.rm = TRUE): no non-missing arguments to max; returning
 -Inf</code></pre>
@@ -700,36 +697,36 @@ NCV = 2181.3  Scale est. = 5.6974    n = 365</code></pre>
 <h2 class="anchored" data-anchor-id="short-term-forward-prediction">Short-term, forward prediction</h2>
 <p>Instead of having a moving window around each datum, we could instead try a predict-forward scheme where we take data up to a given month and predict one month ahead (ignoring any future data). This means that as we work through the timeseries, we have more information (for the last set we have January-November data to work with).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>mdays <span class="ot">&lt;-</span> <span class="fu">seq.Date</span>(<span class="fu">ymd</span>(<span class="st">"2019-01-01"</span>), <span class="fu">ymd</span>(<span class="st">"2019-12-31"</span>), <span class="at">by=</span><span class="fu">day</span>(<span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>mdays <span class="ot">&lt;-</span> <span class="fu">seq.Date</span>(<span class="fu">ymd</span>(<span class="st">"2019-01-01"</span>), <span class="fu">ymd</span>(<span class="st">"2019-12-31"</span>), <span class="at">by=</span><span class="fu">day</span>(<span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: tz(): Don't know how to compute timezone for object of class numeric;
 returning "UTC".</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>mdays <span class="ot">&lt;-</span> <span class="fu">month</span>(<span class="fu">ymd</span>(mdays))</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>nei <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
-<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="co"># let's write this as a for loop because it's easy to think about</span></span>
-<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>){</span>
-<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># drop days after in this month</span></span>
-<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>  iind <span class="ot">&lt;-</span> <span class="fu">which</span>(mdays <span class="sc">&gt;</span> i)</span>
-<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># drop</span></span>
-<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>k, iind)</span>
-<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>m, <span class="fu">length</span>(iind))</span>
-<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># want to predict forward 1 month</span></span>
-<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>  iind <span class="ot">&lt;-</span> <span class="fu">which</span>(mdays <span class="sc">==</span> (i<span class="sc">+</span><span class="dv">1</span>))</span>
-<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>i <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>i, iind)</span>
-<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>mi, <span class="fu">length</span>(iind))</span>
-<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(nei<span class="sc">$</span>m)</span>
-<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(nei<span class="sc">$</span>mi)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>mdays <span class="ot">&lt;-</span> <span class="fu">month</span>(<span class="fu">ymd</span>(mdays))</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>nei <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="co"># let's write this as a for loop because it's easy to think about</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>){</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># drop days after in this month</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>  iind <span class="ot">&lt;-</span> <span class="fu">which</span>(mdays <span class="sc">&gt;</span> i)</span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># drop</span></span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>k, iind)</span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>m, <span class="fu">length</span>(iind))</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># want to predict forward 1 month</span></span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>  iind <span class="ot">&lt;-</span> <span class="fu">which</span>(mdays <span class="sc">==</span> (i<span class="sc">+</span><span class="dv">1</span>))</span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>i <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>i, iind)</span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>mi, <span class="fu">length</span>(iind))</span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(nei<span class="sc">$</span>m)</span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(nei<span class="sc">$</span>mi)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>What does that look like?</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vis_nei</span>(nei)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vis_nei</span>(nei)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -741,8 +738,8 @@ returning "UTC".</code></pre>
 <p>(Note the difference in the plot compared to the previous examples where we only had one colour, now we have differing leave-out and prediction sets.)</p>
 <p>Now fitting that model and making predictions as before:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>b3 <span class="ot">&lt;-</span> <span class="fu">gam</span>(COSMOS_VWC <span class="sc">~</span> <span class="fu">s</span>(ndate, <span class="at">k=</span><span class="dv">20</span>), <span class="at">data=</span>bal_2019, <span class="at">method=</span><span class="st">"NCV"</span>, <span class="at">nei=</span>nei)</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(b3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>b3 <span class="ot">&lt;-</span> <span class="fu">gam</span>(COSMOS_VWC <span class="sc">~</span> <span class="fu">s</span>(ndate, <span class="at">k=</span><span class="dv">20</span>), <span class="at">data=</span>bal_2019, <span class="at">method=</span><span class="st">"NCV"</span>, <span class="at">nei=</span>nei)</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(b3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Family: gaussian 
@@ -766,19 +763,19 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 R-sq.(adj) =  0.525   Deviance explained = 54.8%
 NCV = 2181.3  Scale est. = 5.6974    n = 365</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b3, bal_2019,</span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b3"</span>, <span class="at">ci_label=</span><span class="st">"pred_b3"</span>)</span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019) <span class="sc">+</span></span>
-<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
-<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b3), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
-<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b3_u, <span class="at">ymin=</span>pred_b3_l),</span>
-<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b2), <span class="at">colour=</span><span class="st">"#7cae00"</span>) <span class="sc">+</span></span>
-<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b2_u, <span class="at">ymin=</span>pred_b2_l),</span>
-<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"#7cae00"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
-<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b3, bal_2019,</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b3"</span>, <span class="at">ci_label=</span><span class="st">"pred_b3"</span>)</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019) <span class="sc">+</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b3), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b3_u, <span class="at">ymin=</span>pred_b3_l),</span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b2), <span class="at">colour=</span><span class="st">"#7cae00"</span>) <span class="sc">+</span></span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b2_u, <span class="at">ymin=</span>pred_b2_l),</span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"#7cae00"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -793,23 +790,23 @@ NCV = 2181.3  Scale est. = 5.6974    n = 365</code></pre>
 <h2 class="anchored" data-anchor-id="what-about-restricting-the-prediction-neighbourhood">What about restricting the prediction neighbourhood?</h2>
 <p>Taking the scheme that we saw in <code>b2</code> again, but this time just predicting back for the middle datum in the dropped set, we might expect to see some difference in the results.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># construct this the other way around, we want to predict each point:</span></span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>nei <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>i <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">365</span> <span class="co">#partygirl</span></span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(start)</span>
-<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a><span class="co"># now take the 20 either side</span></span>
-<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="fu">lapply</span>(nei<span class="sc">$</span>i, \(x){</span>
-<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">max</span>(<span class="fu">c</span>(<span class="dv">1</span>, x<span class="dv">-20</span>))<span class="sc">:</span><span class="fu">min</span>(<span class="fu">c</span>(<span class="dv">365</span>, x<span class="sc">+</span><span class="dv">20</span>))</span>
-<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">unlist</span>(nt)</span>
-<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(<span class="fu">lapply</span>(nt, length))</span>
-<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a><span class="co"># let the set we're predicting to be just the datum in the middle of the</span></span>
-<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a><span class="co"># training set</span></span>
-<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a><span class="co"># this is a bit wonky at the edges</span></span>
-<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a><span class="fu">vis_nei</span>(nei)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># construct this the other way around, we want to predict each point:</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>nei <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>i <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">365</span> <span class="co">#partygirl</span></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(start)</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a><span class="co"># now take the 20 either side</span></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="fu">lapply</span>(nei<span class="sc">$</span>i, \(x){</span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">max</span>(<span class="fu">c</span>(<span class="dv">1</span>, x<span class="dv">-20</span>))<span class="sc">:</span><span class="fu">min</span>(<span class="fu">c</span>(<span class="dv">365</span>, x<span class="sc">+</span><span class="dv">20</span>))</span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">unlist</span>(nt)</span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(<span class="fu">lapply</span>(nt, length))</span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a><span class="co"># let the set we're predicting to be just the datum in the middle of the</span></span>
+<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a><span class="co"># training set</span></span>
+<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a><span class="co"># this is a bit wonky at the edges</span></span>
+<span id="cb38-17"><a href="#cb38-17" aria-hidden="true" tabindex="-1"></a><span class="fu">vis_nei</span>(nei)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -820,8 +817,8 @@ NCV = 2181.3  Scale est. = 5.6974    n = 365</code></pre>
 </div>
 <p>Now looking at the results:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>b4 <span class="ot">&lt;-</span> <span class="fu">gam</span>(COSMOS_VWC <span class="sc">~</span> <span class="fu">s</span>(ndate, <span class="at">k=</span><span class="dv">20</span>), <span class="at">data=</span>bal_2019, <span class="at">method=</span><span class="st">"NCV"</span>, <span class="at">nei=</span>nei)</span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(b4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>b4 <span class="ot">&lt;-</span> <span class="fu">gam</span>(COSMOS_VWC <span class="sc">~</span> <span class="fu">s</span>(ndate, <span class="at">k=</span><span class="dv">20</span>), <span class="at">data=</span>bal_2019, <span class="at">method=</span><span class="st">"NCV"</span>, <span class="at">nei=</span>nei)</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(b4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Family: gaussian 
@@ -845,19 +842,19 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 R-sq.(adj) =  0.525   Deviance explained = 54.8%
 NCV = 2181.3  Scale est. = 5.6974    n = 365</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b4, bal_2019,</span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b4"</span>, <span class="at">ci_label=</span><span class="st">"pred_b4"</span>)</span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019) <span class="sc">+</span></span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
-<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b4), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
-<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b4_u, <span class="at">ymin=</span>pred_b4_l),</span>
-<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b2), <span class="at">colour=</span><span class="st">"#7cae00"</span>) <span class="sc">+</span></span>
-<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b2_u, <span class="at">ymin=</span>pred_b2_l),</span>
-<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"#7cae00"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
-<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b4, bal_2019,</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b4"</span>, <span class="at">ci_label=</span><span class="st">"pred_b4"</span>)</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bal_2019) <span class="sc">+</span></span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b4), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b4_u, <span class="at">ymin=</span>pred_b4_l),</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b2), <span class="at">colour=</span><span class="st">"#7cae00"</span>) <span class="sc">+</span></span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b2_u, <span class="at">ymin=</span>pred_b2_l),</span>
+<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"#7cae00"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
+<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -876,16 +873,16 @@ NCV = 2181.3  Scale est. = 5.6974    n = 365</code></pre>
 <p>Let’s unpack that a little and then apply it to the results we have above. If we’re taking subsets of the data fitting to them and then predicting back on those same sets, then the cross-validation score is estimating the average prediction error on the training sets (which weren’t included in the testing set used to fit the data). For our first example with NCV (<code>b2</code>), where we had a blocked, moving window design to our cross-validation scheme, we can see that we have a model that generally does a reasonable “average” over the time series.</p>
 <p>Our “short-term, forward prediction” model (<code>b3</code>) looks like it’s overfitting a little to the late April dip in water content. Since the folds are by month, it seems that the model overfits to that dip:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">subset</span>(bal_2019, <span class="fu">month</span>(DATE_TIME) <span class="sc">%in%</span> <span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>)) <span class="sc">+</span></span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
-<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b3), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
-<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b3_u, <span class="at">ymin=</span>pred_b3_l),</span>
-<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b2), <span class="at">colour=</span><span class="st">"#7cae00"</span>) <span class="sc">+</span></span>
-<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b2_u, <span class="at">ymin=</span>pred_b2_l),</span>
-<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"#7cae00"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
-<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">subset</span>(bal_2019, <span class="fu">month</span>(DATE_TIME) <span class="sc">%in%</span> <span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>)) <span class="sc">+</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>COSMOS_VWC)) <span class="sc">+</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b3), <span class="at">colour=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b3_u, <span class="at">ymin=</span>pred_b3_l),</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"red"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">y=</span>pred_b2), <span class="at">colour=</span><span class="st">"#7cae00"</span>) <span class="sc">+</span></span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x=</span>DATE_TIME, <span class="at">ymax=</span>pred_b2_u, <span class="at">ymin=</span>pred_b2_l),</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill=</span><span class="st">"#7cae00"</span>, <span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Date"</span>, <span class="at">y=</span><span class="st">"Volumetric water content"</span>) <span class="sc">+</span></span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">

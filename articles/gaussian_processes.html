@@ -6,8 +6,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="David L Miller">
 
-<title>About – Yes! You can do that in mgcv!</title>
+<title>Gaussian processes – Yes! You can do that in mgcv!</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -23,23 +24,23 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<script src="site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="site_libs/quarto-html/anchor.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-cf6166c893c2d932d241f30071efce7e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-cf6166c893c2d932d241f30071efce7e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -67,9 +68,25 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
+<!-- thanks to Eli Holmes for this trick! https://github.com/quarto-dev/quarto-cli/issues/2275 -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: {autoNumber: "AMS"} },
+  tex2jax: {inlineMath: [ ['$','$'], ["\\(","\\)"] ]}
+});
+</script>
+
+<!-- This is what works with Quarto -->
+<script>
+  MathJax = {
+    tex: {
+      tags: 'ams'  // should be 'ams', 'none', or 'all'
+    }
+  };
+</script>
 
 
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="../styles.css">
 </head>
 
 <body class="nav-fixed quarto-light">
@@ -79,7 +96,7 @@ ul.task-list li input[type="checkbox"] {
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
+    <a class="navbar-brand" href="../index.html">
     <span class="navbar-title">Yes! You can do that in <code>mgcv</code>!</span>
     </a>
   </div>
@@ -90,15 +107,15 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="./index.html"> 
+    <a class="nav-link" href="../index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="./about.html" aria-current="page"> 
+    <a class="nav-link" href="../about.html"> 
 <span class="menu-text">About</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./contributing.html"> 
+    <a class="nav-link" href="../contributing.html"> 
 <span class="menu-text">Contributing material</span></a>
   </li>  
   <li class="nav-item dropdown ">
@@ -107,23 +124,23 @@ ul.task-list li input[type="checkbox"] {
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-articles">    
         <li>
-    <a class="dropdown-item" href="./articles/gamvar.html">
+    <a class="dropdown-item" href="../articles/gamvar.html">
  <span class="dropdown-text">GAM variance estimation</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./articles/prediction_intervals.html">
+    <a class="dropdown-item" href="../articles/prediction_intervals.html">
  <span class="dropdown-text">Prediction intervals</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./articles/poisson_processes.html">
+    <a class="dropdown-item" href="../articles/poisson_processes.html">
  <span class="dropdown-text">Poisson processes in <code>mgcv</code></span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./articles/ncv.html">
+    <a class="dropdown-item" href="../articles/ncv.html">
  <span class="dropdown-text">Neighbourhood cross-validation</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./articles/ncv_timeseries.html">
+    <a class="dropdown-item" href="../articles/ncv_timeseries.html">
  <span class="dropdown-text">Neighbourhood cross-validation for time series</span></a>
   </li>  
     </ul>
@@ -144,8 +161,16 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#why" id="toc-why" class="nav-link active" data-scroll-target="#why">Why?</a></li>
-  <li><a href="#who" id="toc-who" class="nav-link" data-scroll-target="#who">Who?</a></li>
+  <li><a href="#what-is-a-gaussian-process" id="toc-what-is-a-gaussian-process" class="nav-link active" data-scroll-target="#what-is-a-gaussian-process">What is a Gaussian process?</a>
+  <ul class="collapse">
+  <li><a href="#links-to-kriging" id="toc-links-to-kriging" class="nav-link" data-scroll-target="#links-to-kriging">Links to kriging</a></li>
+  </ul></li>
+  <li><a href="#gaussian-processes-in-mgcv-bsgp" id="toc-gaussian-processes-in-mgcv-bsgp" class="nav-link" data-scroll-target="#gaussian-processes-in-mgcv-bsgp">Gaussian processes in <code>mgcv</code>: <code>bs="gp"</code></a>
+  <ul class="collapse">
+  <li><a href="#gaussian-process-formulation-in-mgcv" id="toc-gaussian-process-formulation-in-mgcv" class="nav-link" data-scroll-target="#gaussian-process-formulation-in-mgcv">Gaussian process formulation in <code>mgcv</code></a></li>
+  <li><a href="#going-beyond-the-defaults" id="toc-going-beyond-the-defaults" class="nav-link" data-scroll-target="#going-beyond-the-defaults">Going beyond the defaults</a></li>
+  </ul></li>
+  <li><a href="#thanks" id="toc-thanks" class="nav-link" data-scroll-target="#thanks">Thanks</a></li>
   </ul>
 </nav>
     </div>
@@ -154,13 +179,19 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">About</h1>
+<h1 class="title">Gaussian processes</h1>
 </div>
 
 
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>David L Miller </p>
+          </div>
+  </div>
     
   
     
@@ -171,13 +202,29 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="why" class="level1">
-<h1>Why?</h1>
-<p>There’s lots of information out there about things you can do with <code>mgcv</code> but they’re all in different places (some of those places are “my hard drive”), so I thought it would be useful to collect them here for folks to be able to use.</p>
+<p>If you’ve spent any amount of time talking to other people about how you use GAMs, there’s a good chance that someone has asked you “why don’t you use Gaussian processes?” My aim here is to help answer that question in a useful way.</p>
+<p>I’ll begin with some definitions, links to splines and other smoothers, then talk about how Gaussian processes work in <code>mgcv</code>.</p>
+<section id="what-is-a-gaussian-process" class="level1">
+<h1>What is a Gaussian process?</h1>
+<p>When we talk about smoothing, the usual GAM-centric way of thinking about things is in terms of basis functions and penalties. We have a complicated function we want to estimate, we break that down into little basis functions that are fixed, estimate coefficients for each of them (subject to the penalties) and we’re done.</p>
+<p>As the name might give away, Gaussian processes take a <em>stochastic process</em>-based view of the world instead. We can think of our complicated wiggly function as a realisation from a stochastic process – specifically one with a Gaussian form.</p>
+<section id="links-to-kriging" class="level2">
+<h2 class="anchored" data-anchor-id="links-to-kriging">Links to kriging</h2>
 </section>
-<section id="who" class="level1">
-<h1>Who?</h1>
-<p>I’m <a href="https://converged.yt">Dave Miller</a>. I work at <a href="http://www.bioss.ac.uk">Biomathematics and Statistics Scotland</a> and the <a href="http://www.ceh.ac.uk">UK Centre for Ecology and Hydrology</a>. I first started working with <code>mgcv</code> sometime around 2007.</p>
+</section>
+<section id="gaussian-processes-in-mgcv-bsgp" class="level1">
+<h1>Gaussian processes in <code>mgcv</code>: <code>bs="gp"</code></h1>
+<p>Fitting Gaussian processes in <code>mgcv</code> is possible via the <code>"gp"</code> basis: simply changing <code>bs="gp"</code> in your <code>s()</code>/<code>te()</code>/<code>t2()</code> terms will give you <em>a</em> Gaussian process, but there are some extra notes that it’s worth bearing in mind while working with them in <code>mgcv</code>.</p>
+<section id="gaussian-process-formulation-in-mgcv" class="level2">
+<h2 class="anchored" data-anchor-id="gaussian-process-formulation-in-mgcv">Gaussian process formulation in <code>mgcv</code></h2>
+</section>
+<section id="going-beyond-the-defaults" class="level2">
+<h2 class="anchored" data-anchor-id="going-beyond-the-defaults">Going beyond the defaults</h2>
+</section>
+</section>
+<section id="thanks" class="level1">
+<h1>Thanks</h1>
+<p>Time to think about this was partly funded by UK Natural Environment Research Council under grant <a href="https://gotw.nerc.ac.uk/list_full.asp?pcode=NE%2FZ503563%2F1&amp;classtype=&amp;cookieConsent=A">SOCCATOA: Soil Organic Carbon Change: A Tool for the Accreditation of land-based climate change mitigation activities</a>.</p>
 
 
 </section>

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>About – Yes! You can do that in mgcv!</title>
+<title>random_effects_overview – Yes! You can do that in `mgcv`!</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -23,23 +23,23 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<script src="site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="site_libs/quarto-html/anchor.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-cf6166c893c2d932d241f30071efce7e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-cf6166c893c2d932d241f30071efce7e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -69,7 +69,7 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 
 
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="../styles.css">
 </head>
 
 <body class="nav-fixed quarto-light">
@@ -79,7 +79,7 @@ ul.task-list li input[type="checkbox"] {
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
+    <a class="navbar-brand" href="../index.html">
     <span class="navbar-title">Yes! You can do that in <code>mgcv</code>!</span>
     </a>
   </div>
@@ -90,15 +90,15 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="./index.html"> 
+    <a class="nav-link" href="../index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="./about.html" aria-current="page"> 
+    <a class="nav-link" href="../about.html"> 
 <span class="menu-text">About</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./contributing.html"> 
+    <a class="nav-link" href="../contributing.html"> 
 <span class="menu-text">Contributing material</span></a>
   </li>  
   <li class="nav-item dropdown ">
@@ -107,23 +107,23 @@ ul.task-list li input[type="checkbox"] {
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-articles">    
         <li>
-    <a class="dropdown-item" href="./articles/gamvar.html">
+    <a class="dropdown-item" href="../articles/gamvar.html">
  <span class="dropdown-text">GAM variance estimation</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./articles/prediction_intervals.html">
+    <a class="dropdown-item" href="../articles/prediction_intervals.html">
  <span class="dropdown-text">Prediction intervals</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./articles/poisson_processes.html">
+    <a class="dropdown-item" href="../articles/poisson_processes.html">
  <span class="dropdown-text">Poisson processes in <code>mgcv</code></span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./articles/ncv.html">
+    <a class="dropdown-item" href="../articles/ncv.html">
  <span class="dropdown-text">Neighbourhood cross-validation</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./articles/ncv_timeseries.html">
+    <a class="dropdown-item" href="../articles/ncv_timeseries.html">
  <span class="dropdown-text">Neighbourhood cross-validation for time series</span></a>
   </li>  
     </ul>
@@ -144,40 +144,62 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#why" id="toc-why" class="nav-link active" data-scroll-target="#why">Why?</a></li>
-  <li><a href="#who" id="toc-who" class="nav-link" data-scroll-target="#who">Who?</a></li>
+  <li><a href="#a-quick-bit-of-theory-and-some-consequences-for-practice" id="toc-a-quick-bit-of-theory-and-some-consequences-for-practice" class="nav-link active" data-scroll-target="#a-quick-bit-of-theory-and-some-consequences-for-practice">A quick bit of theory and some consequences for practice</a></li>
+  <li><a href="#simple-random-effects-via-sx-bsre" id="toc-simple-random-effects-via-sx-bsre" class="nav-link" data-scroll-target="#simple-random-effects-via-sx-bsre">“Simple” random effects via <code>s(x, bs="re")</code></a></li>
+  <li><a href="#usinglme-style-random-effects-via-gamm" id="toc-usinglme-style-random-effects-via-gamm" class="nav-link" data-scroll-target="#usinglme-style-random-effects-via-gamm">Using<code>lme</code>-style random effects via <code>gamm</code></a></li>
+  <li><a href="#using-lme4-style-random-effects-with-gamm4" id="toc-using-lme4-style-random-effects-with-gamm4" class="nav-link" data-scroll-target="#using-lme4-style-random-effects-with-gamm4">Using <code>lme4</code>-style random effects with <code>gamm4</code></a></li>
+  <li><a href="#completely-custom-random-effects-withparapen" id="toc-completely-custom-random-effects-withparapen" class="nav-link" data-scroll-target="#completely-custom-random-effects-withparapen">Completely custom random effects with<code>paraPen</code></a></li>
+  <li><a href="#further-reading" id="toc-further-reading" class="nav-link" data-scroll-target="#further-reading">Further reading</a></li>
   </ul>
 </nav>
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content">
-
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title">About</h1>
-</div>
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
 
 
 
-<div class="quarto-title-meta">
 
-    
-  
-    
-  </div>
-  
-
-
-</header>
-
-
-<section id="why" class="level1">
-<h1>Why?</h1>
-<p>There’s lots of information out there about things you can do with <code>mgcv</code> but they’re all in different places (some of those places are “my hard drive”), so I thought it would be useful to collect them here for folks to be able to use.</p>
+<p>There are many ways to fit random effects in <code>mgcv</code>. Which is “best” depends a little on the exact nature of the data that are being modelled and the structure of the random effect one needs. This document outlines (probably) all of the ways you can fit random effects in <code>mgcv</code> (and some outside of <code>mgcv</code>).</p>
+<section id="a-quick-bit-of-theory-and-some-consequences-for-practice" class="level2">
+<h2 class="anchored" data-anchor-id="a-quick-bit-of-theory-and-some-consequences-for-practice">A quick bit of theory and some consequences for practice</h2>
+<p>Before getting into the details here, it’s worth noting that random effects and splines share an equivalence. We can view splines as random effects, the coefficients estimated for the spline are random effects: their associated penalties are effectively inverse variances (penalties give the structure to the variance, the smoothing parameters scale them). We can therefore go the other direction too, and get the penalty that corresponds to a given covariance matrix structure from a random effect, with the variance parameter itself being an inverse of the smoothing parameter.</p>
+<p>This is all very convenient mathematically, but it can leave us in a bit of trouble computationally. A lot of problems where we have a random effect, it’s structure is <em>sparse</em>, that is: the covariance matrix tends to have a lot of zeros in it. We can see that from the structure of a simple random effect where we have one coefficient for each “block” in the data (e.g., individual, replicate or somesuch). In that case we have an identity matrix for the covariance matrix. Random effects software has taken advantage of this structure (knowing that in matrix-multiplications many entries can be ignored as they’re zero, saving time). Splines on the other hand, are <em>dense</em>: their penalty matrices contain almost no zeros, so computation must crank through all of the parts of a matrix-multiplication. This leaves us in a little bit of a conflict, as we want to take advantage of the speed that sparsity gives us while not performing any of the spline calculations incorrectly. There are additional repercussions here, as this issue can also lead to instability in the numerics of problems, giving potential convergence issues when fitting models that mix both splines and random effects. This has historically been a bit of an issue – it does’t always end badly, but it can be immensely frustrating when it does.</p>
 </section>
-<section id="who" class="level1">
-<h1>Who?</h1>
-<p>I’m <a href="https://converged.yt">Dave Miller</a>. I work at <a href="http://www.bioss.ac.uk">Biomathematics and Statistics Scotland</a> and the <a href="http://www.ceh.ac.uk">UK Centre for Ecology and Hydrology</a>. I first started working with <code>mgcv</code> sometime around 2007.</p>
+<section id="simple-random-effects-via-sx-bsre" class="level2">
+<h2 class="anchored" data-anchor-id="simple-random-effects-via-sx-bsre">“Simple” random effects via <code>s(x, bs="re")</code></h2>
+<p>The easiest way to get simple independent random effects into an <code>mgcv</code> model is to use the <code>"re"</code> basis. If we write <code>s(x, bs="re")</code> that will give us a random effect for <code>x</code>. If <code>x</code> is a factor variable this will give a random intercept model, whereas if <code>x</code> is a numeric variable, we have a random slope model. In both cases we assume a normal distribution for the coefficients, with unknown scale (variance) parameter which will then be estimated.</p>
+<p>Since these random effects are fitted using the same construction as splines do (i.e., the random effects are “converted” to spline format to fit), the results that come out of the <code>summary</code> from a fitted model may not be that useful on first glance. However, we can convert the terms in our fitted GAM using the <a href="https://rdrr.io/cran/mgcv/man/gam.vcomp.html"><code>gam.vcomp</code></a> function to obtain variance estimates as we would from other random effects software.</p>
+<p>The random effects basis functions constructed using <code>bs="re"</code> allow for more than just one covariate to be included. For example, <code>s(x,v,w,bs="re")</code> would result in a random effect for the <code>x:v:w</code> interaction. These can be mixed factor/numeric variables.</p>
+<p>Anecdotally, it seems that using marginal likelihood (<code>method="ML"</code>) or restricted maximum likelihood (<code>method="REML"</code>) leads to better convergence than other methods in <code>mgcv</code>.</p>
+<p>For larger datasets, these terms can also be used in <a href="https://rdrr.io/cran/mgcv/man/bam.html"><code>bam</code></a> models.</p>
+<p>See also <a href="https://rdrr.io/cran/mgcv/man/smooth.construct.re.smooth.spec.html"><code>?smooth.construct.re.smooth.spec</code></a>.</p>
+</section>
+<section id="usinglme-style-random-effects-via-gamm" class="level2">
+<h2 class="anchored" data-anchor-id="usinglme-style-random-effects-via-gamm">Using<code>lme</code>-style random effects via <code>gamm</code></h2>
+<p>The other way of specifying and fitting random effects is via the <code>gamm</code> function (as opposed to <code>gam</code>). Rather than moving our random effects into a spline formulation, <code>gamm</code> takes our splines and recasts them as random effects. Once the terms are constructed by <code>mgcv</code>, <code>gamm</code> then passes the random effects model to <code>nlme</code> for fitting. Specifying random effects in the model is now done via the <code>random=</code> argument to <code>gamm</code>, in the “classic” <code>lme</code> style. For a random effect per group <code>g</code> in the data, we can write <code>random=~(1|g)</code>. More complicatedly: <code>random=list(x1=~1, x2=~1|g)</code> will (assuming <code>x1</code> and <code>g</code> are factors and <code>x2</code> is numeric) give a model with random intercepts for <code>x1</code> and random slopes for <code>x2</code>, nested within <code>g</code>.</p>
+<p>One of the confusions when fitting with <code>gamm</code> is the returned object is not a standard <code>mgcv</code> model. It is a <code>list</code> containing two elements: one is the <code>lme</code> object returned by <code>nlme</code> (giving the model as if all components were random effects) and the other is a normal <code>gam</code> return objects, which has the smoothers converted back to spline form for easier interpretation. These elements are named <code>$lme</code> and <code>$gam</code>, respectively.</p>
+<p>In addition to <code>lme</code>-style random effects, <code>gamm</code> also allows the use of a correlation structure using the <code>correlation=</code> argument. This is specified as in <code>lme</code>.</p>
+<p>Note that <code>gamm</code> doesn’t perform well when the response variable is binary. Overall it is less numerically stable than using <code>gam</code>, so can often crash or fail to converge. This is in part down to the use of penalized quasi-likelihood to fit the models.</p>
+<p>See also <a href="https://rdrr.io/cran/mgcv/man/gamm.html"><code>?gamm</code></a>.</p>
+</section>
+<section id="using-lme4-style-random-effects-with-gamm4" class="level2">
+<h2 class="anchored" data-anchor-id="using-lme4-style-random-effects-with-gamm4">Using <code>lme4</code>-style random effects with <code>gamm4</code></h2>
+<p>Rather than using <code>nlme</code> for a back-end to fit random effects, we can use <code>lme4</code>. This is done via the <code>gamm4</code> package, rather than <code>mgcv</code>. Instead of using PQL for fitting, <code>gamm4</code> uses REML or ML. This has the advantage of being better for binary data, and tends to be more stable. Unfortunately, it doesn’t support correlation structures.</p>
+<p>Writing models is as in <code>gamm</code>, via the <code>random=</code> argument and the resulting object is a <code>list</code> with <code>$gam</code> and <code>$mer</code> elements giving the GAM and GLMM interpretations of the model, respectively.</p>
+<p>See also <a href="https://rdrr.io/cran/gamm4/man/gamm4.html"><code>?gamm4</code></a>.</p>
+</section>
+<section id="completely-custom-random-effects-withparapen" class="level2">
+<h2 class="anchored" data-anchor-id="completely-custom-random-effects-withparapen">Completely custom random effects with<code>paraPen</code></h2>
+<p>Finally, we can specify any random effects structure we like within <code>gam</code>/<code>bam</code> model using the <code>paraPen</code> approach. This allows us to specify a matrix in the <code>formula</code> for the model, then attach a penalty (or penalties) to that matrix covariate (we attach a <code>Pen</code>alty to <code>para</code>metric terms in the model, hence <code>paraPen</code>). For example, we could construct the random effects design matrix, <code>X</code> say, using <code>model.matrix</code> then supply a diagonal matrix for the penalty/covariance for that term to get a simple random effect. That would be specified something like <code>gam(y~X, paraPen=list(S=list(diag(Xn))))</code> (if <code>Xn</code> is the dimension of the random effects). This is a very flexible approach, but can be a bit fraught if you’re not 100% sure what you’re doing.</p>
+<p>See also <a href="https://rdrr.io/cran/mgcv/man/gam.models.html"><code>?gam.models</code></a>.</p>
+</section>
+<section id="further-reading" class="level2">
+<h2 class="anchored" data-anchor-id="further-reading">Further reading</h2>
+<ul>
+<li>The <code>mgcv</code> manual pages <a href="https://rdrr.io/cran/mgcv/man/random.effects.html"><code>?random.effects</code></a> and <a href="https://rdrr.io/cran/mgcv/man/gam.models.html"><code>?gam.models</code></a> have lots of useful bits in them.</li>
+<li>Gavin Simpson’s blog post <a href="https://fromthebottomoftheheap.net/2021/02/02/random-effects-in-gams/">Using random effects in GAMs with <code>mgcv</code></a></li>
+<li>My preprint on how we <a href="https://arxiv.org/abs/1902.01330">interpret GAMs in a Bayesian way</a></li>
+</ul>
 
 
 </section>
