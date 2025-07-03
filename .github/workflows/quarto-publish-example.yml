@@ -41,7 +41,6 @@ jobs:
         run: |
           gh --repo quarto-dev/quarto-cli release download --pattern '*-amd64.deb'
           dpkg -i $(ls quarto-*.deb)
-          R -e 'install.packages(c("pak", "quarto"))'
 
       - name: install SSH
         run: apt install openssh-client -y
@@ -54,6 +53,7 @@ jobs:
       - name: install R packages
         run: |
           R -e 'install.packages(c(
+                  "quarto",
                   "rmarkdown",
                   "ggplot2",
                   "dsm",
@@ -65,9 +65,10 @@ jobs:
                   "patchwork"
                 ))'
 
-      - name: pre-setup for quarto
+      - name: render and publish
         run: |
           quarto render
+          git branch gh-pages
           quarto publish gh-pages --no-browser
 #      - name: Publish to GitHub Pages (and render)
 #        uses: quarto-dev/quarto-actions/publish@v2
