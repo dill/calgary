@@ -1,0 +1,47 @@
+---
+title: Penalized parametric components and more with `paraPen`
+author: David L Miller
+date: 2024-06-31
+bibliography: parapen.bib
+csl: journal-of-the-royal-statistical-society.csl
+format:
+  html:
+    include-in-header: ../mathjax.html
+    html-math-method:
+      method: mathjax
+
+---
+
+This article covers a little-known `mgcv` feature: the `paraPen` argument. You might have seen it referenced in `?gam` or `?gam.models` but not known what you can do with it? This is for you.
+
+On a broad scale what `paraPen` can do for you is allow you to setup your own smooths/random effects/etc, allowing you to emulate the `s()` function in a GAM formula. I'll show some examples of how to do that and talk about how it works.
+
+
+
+# Background
+
+Let's start by talking about the things that happen when you execute a piece of code like:
+
+```{r gam-setup-start}
+library(mgcv)
+
+# example from ?gam
+set.seed(2)
+dat <- gamSim(1,n=400,dist="normal",scale=2)
+b <- gam(y~s(x0), data=dat)
+```
+
+Lots of things happen, of course, but a key conceptual step here is that `gam()` knows to construct the model using only `data` and the formula specification `y~s(x0)`. The two main parts that the model needs are a design matrix and a penalty matrix. When we write `s()`, `mgcv` will assume you're using the thin plate regression spline basis [@wood_thin_2003] and pass the data (plus, in this case the default, values for `k` etc) to the appropriate `smooth.construct.tp.smooth.spec` method^[Each smoother in `mgcv` has one of these in the form `smooth.construct.*.smooth.spec`. Looking at the source code for these can be a really useful way to learn new numerical tricks and implementation details.]. That "smooth constructor" method will then generate a standardized output consisting of^[Amongst other things, see `?mgcv::smoothCon`.] the design matrix and penalty matrix/matrices.
+
+As we know from spline basics [@wood_generalized_2017-1], the design matrix is constructed by taking each datum and applying each basis function to it. So if we selected 10 (the default for univariate smooths) basis functions (setting `k=10`) and we have $n$ data, we end-up with a $n\times 10$ design matrix.
+
+
+
+
+
+
+
+
+# Acknowledgements
+
+I was alerted to the existence of `paraPen` by Mark Bravington and Sharon Hedley when we wrote our paper on variance propagation [@bravingtonVariancePropagationDensity2021].
