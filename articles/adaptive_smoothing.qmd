@@ -329,6 +329,45 @@ b_ad <- gam(accel ~ s(times, bs="ad"), data=mcycle)
 
 @fig-tprsadcomp shows a comparison of adaptive smoothing and our initial try with thin-plate regression splines. Not only does the adaptive smoother capture the flatness in either extreme of the data, we also have narrower confidence intervals.
 
+It's worth having a quick look at the structure that we're using to represent this in `mgcv`. First off, we note that we use `r length(b_ad$smooth[[1]]$S)` penalty matrices to fit the model:
+
+```{r Smats}
+length(b_ad$smooth[[1]]$S)
+```
+
+We can visualize these matrices simply as follows:
+
+```{r}
+#| label: visS
+#| fig.cap: The penalty matrices used to fit our model `b_ad`. Note the spatial structure as we move left to right. Most values are zero but the leading diagonal advances down the matrix, showing where the penalty acts over the spline basis.
+#| fig.width: 10
+#| fig.height: 4
+#| message: false
+library(dplyr)
+
+Splot <- lapply(b_ad$smooth[[1]]$S, array2DF, base=list(as.character(1:39)))
+Splot <- do.call(rbind, Splot) %>%
+  mutate(arow=as.numeric(Var1),
+         acol=as.numeric(Var2),
+         amat=rep(1:length(b_ad$smooth[[1]]$S),
+                  each=nrow(b_ad$smooth[[1]]$S[[1]])*
+                       nrow(b_ad$smooth[[1]]$S[[1]])),
+         S=Value) %>%
+  select(arow, acol, amat, S)
+
+
+ggplot(Splot) +
+  geom_tile(aes(x=acol, y=arow, fill=S)) +
+  scale_y_reverse() +
+  facet_wrap(~amat, nrow=1) +
+  scale_fill_gradient2() +
+  coord_equal() +
+  labs(fill="Penalty") +
+  theme_void() +
+  theme(legend.position="bottom")
+```
+
+
 ## More options
 
 There are a few things that we can change in the adaptive smoothing specification.

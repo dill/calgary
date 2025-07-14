@@ -184,11 +184,11 @@ Let's start by using the autocorrelogram as a guide, and let's also be a bit pes
 
 A reminder from the documentation:
 
-    `k` is the vector of indices to be dropped for each neighbourhood and `m`
-    gives the end of each neighbourhood. So `nei$k[(nei$m[j-1]+1):nei$m[j]]`
-    gives the points dropped for the neighbourhood `j`. `i` is the vector of
-    indices of points to predict, with corresponding endpoints `mi`. So
-    `nei$i[(nei$mi[j-1]+1):nei$mi[j]]` indexes the points to predict for
+    'a' is the vector of indices to be dropped for each neighbourhood and 'ma'
+    gives the end of each neighbourhood. So 'nei$a[(nei$ma[j-1]+1):nei$ma[j]]'
+    gives the points dropped for the neighbourhood 'j'. 'd' is the vector of
+    indices of points to predict, with corresponding endpoints 'md'. So
+    'nei$d[(nei$md[j-1]+1):nei$md[j]]' indexes the points to predict for
     neighbourhood j.
 
 We're going to create a moving-window-type approach, for the 20 observations either side of each datum. In the literature, this is often referred to as "blocked CV" [@liuUsingCrossvalidationMethods2024; @snijdersCrossValidationPredictorEvaluation1988]. We can do that relatively easily (though maybe somewhat cryptically) using the below code.
@@ -198,10 +198,10 @@ nei <- list()
 start <- pmax(1, (1:365)-20)
 end <- pmin(365, (0:364)+20)
 nt <- lapply(1:365, \(x) start[x]:end[x])
-nei$k <- unlist(nt)
-nei$m <- cumsum(lapply(nt, length))
-nei$i <- nei$k
-nei$mi <- nei$m
+nei$a <- unlist(nt)
+nei$ma <- cumsum(lapply(nt, length))
+nei$d <- nei$a
+nei$md <- nei$ma
 ```
 
 One issue with setting these neighbourhoods up is that we aren't 100% sure whether the computer is doing what we want. I made a wee tool to visualise this for time series (at least) to check what the cross-validation structure you created looks right. You can find that as part of the `mgcvUtils` package [on github here](https://github.com/dill/mgcvUtils). We can then pass the neighbourhood structure to it and see what it produces:
@@ -271,24 +271,24 @@ mdays <- seq.Date(ymd("2019-01-01"), ymd("2019-12-31"), by=day(1))
 mdays <- month(ymd(mdays))
 
 nei <- list()
-nei$k <- c()
-nei$m <- c()
+nei$a <- c()
+nei$ma <- c()
 
 # let's write this as a for loop because it's easy to think about
 for(i in 1:11){
   # drop days after in this month
   iind <- which(mdays > i)
   # drop
-  nei$k <- c(nei$k, iind)
-  nei$m <- c(nei$m, length(iind))
+  nei$a <- c(nei$a, iind)
+  nei$ma<- c(nei$ma, length(iind))
 
   # want to predict forward 1 month
   iind <- which(mdays == (i+1))
-  nei$i <- c(nei$i, iind)
-  nei$mi <- c(nei$mi, length(iind))
+  nei$d <- c(nei$d, iind)
+  nei$md <- c(nei$md, length(iind))
 }
-nei$m <- cumsum(nei$m)
-nei$mi <- cumsum(nei$mi)
+nei$ma <- cumsum(nei$ma)
+nei$md <- cumsum(nei$md)
 ```
 
 What does that look like?
@@ -330,16 +330,16 @@ Taking the scheme that we saw in `b2` again, but this time just predicting back 
 ```{r ncv-small-preds}
 # construct this the other way around, we want to predict each point:
 nei <- list()
-nei$i <- 1:365 #partygirl
-nei$mi <- 1:length(start)
+nei$d <- 1:365 #partygirl
+nei$md <- 1:length(start)
 
 # now take the 20 either side
-nt <- lapply(nei$i, \(x){
+nt <- lapply(nei$d, \(x){
   max(c(1, x-20)):min(c(365, x+20))
 })
 
-nei$k <- unlist(nt)
-nei$m <- cumsum(lapply(nt, length))
+nei$a <- unlist(nt)
+nei$ma <- cumsum(lapply(nt, length))
 # let the set we're predicting to be just the datum in the middle of the
 # training set
 
@@ -404,3 +404,7 @@ Thinking about the "real" objective of NCV (average prediction error on unseen d
 
 Hopefully this is a helpful lesson in thinking about how NCV works and how the schemes used to fit the model can give rather different answers.
 
+
+# Addenda
+
+- Thanks to Zachary Susswein for [spotting a bug](https://github.com/dill/calgary/issues/1) regarding a [change in the syntax](https://cran.r-project.org/web/packages/mgcv/ChangeLog) for `mgcv`. The `mgcvUtils` package has also been updated to take this into account.

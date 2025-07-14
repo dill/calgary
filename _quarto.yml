@@ -21,6 +21,8 @@ website:
           href: articles/ncv.html
         - text: "Neighbourhood cross-validation for time series"
           href: articles/ncv_timeseries.html
+        - text: "Adaptive smoothing in `mgcv`"
+          href: articles/adaptive_smoothing.html
 
 format:
   html:
