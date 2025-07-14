@@ -1,0 +1,47 @@
+---
+title: Gaussian processes
+author: David L Miller
+bibliography: gp.bib
+csl: journal-of-the-royal-statistical-society.csl
+format:
+  html:
+    include-in-header: ../mathjax.html
+    html-math-method:
+      method: mathjax
+
+---
+
+If you've spent any amount of time talking to other people about how you use GAMs, there's a good chance that someone has asked you "why don't you use Gaussian processes?" My aim here is to help answer that question in a useful way.
+
+I'll begin with some definitions, links to splines and other smoothers, then talk about how Gaussian processes work in `mgcv`.
+
+# What is a Gaussian process?
+
+When we talk about smoothing, the usual GAM-centric way of thinking about things is in terms of basis functions and penalties. We have a complicated function we want to estimate, we break that down into little basis functions that are fixed, estimate coefficients for each of them (subject to the penalties) and we're done.
+
+As the name might give away, Gaussian processes take a *stochastic process*-based view of the world instead. We can think of our complicated wiggly function as a realisation from a stochastic process -- specifically one with a Gaussian form.
+
+
+
+## Links to kriging
+
+# Gaussian processes in `mgcv`: `bs="gp"`
+
+Fitting Gaussian processes in `mgcv` is possible via the `"gp"` basis: simply changing `bs="gp"` in your `s()`/`te()`/`t2()` terms will give you *a* Gaussian process, but there are some extra notes that it's worth bearing in mind while working with them in `mgcv`.
+
+## Gaussian process formulation in `mgcv`
+
+
+## Going beyond the defaults
+
+
+
+
+
+
+
+# Thanks
+
+Time to think about this was partly funded by UK Natural Environment Research Council under grant [SOCCATOA: Soil Organic Carbon Change: A Tool for the Accreditation of land-based climate change mitigation activities](https://gotw.nerc.ac.uk/list_full.asp?pcode=NE%2FZ503563%2F1&classtype=&cookieConsent=A).
+
+
