@@ -257,6 +257,7 @@ window.Quarto = {
   <li><a href="#short-term-forward-prediction" id="toc-short-term-forward-prediction" class="nav-link" data-scroll-target="#short-term-forward-prediction">Short-term, forward prediction</a></li>
   <li><a href="#what-about-restricting-the-prediction-neighbourhood" id="toc-what-about-restricting-the-prediction-neighbourhood" class="nav-link" data-scroll-target="#what-about-restricting-the-prediction-neighbourhood">What about restricting the prediction neighbourhood?</a></li>
   <li><a href="#what-does-cross-validation-do" id="toc-what-does-cross-validation-do" class="nav-link" data-scroll-target="#what-does-cross-validation-do">What does cross-validation do?</a></li>
+  <li><a href="#addenda" id="toc-addenda" class="nav-link" data-scroll-target="#addenda">Addenda</a></li>
   </ul>
 </nav>
     </div>
@@ -539,7 +540,7 @@ R-sq.(adj) =  0.338
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># install mgcvUtils</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">"dill/mgcvUtils"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Skipping install of 'mgcvUtils' from a github remote, the SHA1 (c36c58ac) has not changed since last install.
+<pre><code>Skipping install of 'mgcvUtils' from a github remote, the SHA1 (591e49eb) has not changed since last install.
   Use `force = TRUE` to force installation</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcvUtils)</span>
@@ -582,11 +583,11 @@ R-sq.(adj) =  0.338
 <p>The big question, then, is “what does <span class="math inline">\(\alpha(k)\)</span> look like for my data”?</p>
 <p>Let’s start by using the autocorrelogram as a guide, and let’s also be a bit pessimistic and say that the neighbourhood goes out to lag 40 around each point (20 in each direction).</p>
 <p>A reminder from the documentation:</p>
-<pre><code>`k` is the vector of indices to be dropped for each neighbourhood and `m`
-gives the end of each neighbourhood. So `nei$k[(nei$m[j-1]+1):nei$m[j]]`
-gives the points dropped for the neighbourhood `j`. `i` is the vector of
-indices of points to predict, with corresponding endpoints `mi`. So
-`nei$i[(nei$mi[j-1]+1):nei$mi[j]]` indexes the points to predict for
+<pre><code>'a' is the vector of indices to be dropped for each neighbourhood and 'ma'
+gives the end of each neighbourhood. So 'nei$a[(nei$ma[j-1]+1):nei$ma[j]]'
+gives the points dropped for the neighbourhood 'j'. 'd' is the vector of
+indices of points to predict, with corresponding endpoints 'md'. So
+'nei$d[(nei$md[j-1]+1):nei$md[j]]' indexes the points to predict for
 neighbourhood j.</code></pre>
 <p>We’re going to create a moving-window-type approach, for the 20 observations either side of each datum. In the literature, this is often referred to as “blocked CV” <span class="citation" data-cites="liuUsingCrossvalidationMethods2024 snijdersCrossValidationPredictorEvaluation1988">(<a href="#ref-liuUsingCrossvalidationMethods2024" role="doc-biblioref">Liu and Zhou, 2024</a>; <a href="#ref-snijdersCrossValidationPredictorEvaluation1988" role="doc-biblioref">Snijders, 1988</a>)</span>. We can do that relatively easily (though maybe somewhat cryptically) using the below code.</p>
 <div class="cell">
@@ -594,10 +595,10 @@ neighbourhood j.</code></pre>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>start <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="dv">1</span>, (<span class="dv">1</span><span class="sc">:</span><span class="dv">365</span>)<span class="sc">-</span><span class="dv">20</span>)</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>end <span class="ot">&lt;-</span> <span class="fu">pmin</span>(<span class="dv">365</span>, (<span class="dv">0</span><span class="sc">:</span><span class="dv">364</span>)<span class="sc">+</span><span class="dv">20</span>)</span>
 <span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">365</span>, \(x) start[x]<span class="sc">:</span>end[x])</span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">unlist</span>(nt)</span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(<span class="fu">lapply</span>(nt, length))</span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>i <span class="ot">&lt;-</span> nei<span class="sc">$</span>k</span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> nei<span class="sc">$</span>m</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>a <span class="ot">&lt;-</span> <span class="fu">unlist</span>(nt)</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>ma <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(<span class="fu">lapply</span>(nt, length))</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>d <span class="ot">&lt;-</span> nei<span class="sc">$</span>a</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>md <span class="ot">&lt;-</span> nei<span class="sc">$</span>ma</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>One issue with setting these neighbourhoods up is that we aren’t 100% sure whether the computer is doing what we want. I made a wee tool to visualise this for time series (at least) to check what the cross-validation structure you created looks right. You can find that as part of the <code>mgcvUtils</code> package <a href="https://github.com/dill/mgcvUtils">on github here</a>. We can then pass the neighbourhood structure to it and see what it produces:</p>
 <div class="cell">
@@ -625,18 +626,18 @@ COSMOS_VWC ~ s(ndate, k = 20)
 
 Parametric coefficients:
             Estimate Std. Error t value Pr(&gt;|t|)    
-(Intercept)  32.2112     0.1278     252   &lt;2e-16 ***
+(Intercept)  32.2112     0.1442   223.4   &lt;2e-16 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Approximate significance of smooth terms:
-           edf Ref.df     F p-value    
-s(ndate) 17.47  18.69 20.95  &lt;2e-16 ***
+           edf Ref.df    F p-value    
+s(ndate) 3.436  4.291 44.8  &lt;2e-16 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-R-sq.(adj) =  0.525   Deviance explained = 54.8%
-NCV = 2181.3  Scale est. = 5.6974    n = 365</code></pre>
+R-sq.(adj) =  0.367   Deviance explained = 37.3%
+NCV = 1.3349e+05  Scale est. = 7.5862    n = 365</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b2, bal_2019,</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b2"</span>, <span class="at">ci_label=</span><span class="st">"pred_b2"</span>)</span>
@@ -709,24 +710,24 @@ returning "UTC".</code></pre>
 <div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>mdays <span class="ot">&lt;-</span> <span class="fu">month</span>(<span class="fu">ymd</span>(mdays))</span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>nei <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>a <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>ma <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
 <span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="co"># let's write this as a for loop because it's easy to think about</span></span>
 <span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>){</span>
 <span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># drop days after in this month</span></span>
 <span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>  iind <span class="ot">&lt;-</span> <span class="fu">which</span>(mdays <span class="sc">&gt;</span> i)</span>
 <span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># drop</span></span>
-<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>k, iind)</span>
-<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>m, <span class="fu">length</span>(iind))</span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>a <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>a, iind)</span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>ma<span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>ma, <span class="fu">length</span>(iind))</span>
 <span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># want to predict forward 1 month</span></span>
 <span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>  iind <span class="ot">&lt;-</span> <span class="fu">which</span>(mdays <span class="sc">==</span> (i<span class="sc">+</span><span class="dv">1</span>))</span>
-<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>i <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>i, iind)</span>
-<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>mi, <span class="fu">length</span>(iind))</span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>d <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>d, iind)</span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>  nei<span class="sc">$</span>md <span class="ot">&lt;-</span> <span class="fu">c</span>(nei<span class="sc">$</span>md, <span class="fu">length</span>(iind))</span>
 <span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(nei<span class="sc">$</span>m)</span>
-<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(nei<span class="sc">$</span>mi)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>ma <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(nei<span class="sc">$</span>ma)</span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>md <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(nei<span class="sc">$</span>md)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>What does that look like?</p>
 <div class="cell">
@@ -754,18 +755,18 @@ COSMOS_VWC ~ s(ndate, k = 20)
 
 Parametric coefficients:
             Estimate Std. Error t value Pr(&gt;|t|)    
-(Intercept)  32.2112     0.1278     252   &lt;2e-16 ***
+(Intercept)  32.2112     0.1425   226.1   &lt;2e-16 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Approximate significance of smooth terms:
            edf Ref.df     F p-value    
-s(ndate) 17.47  18.69 20.95  &lt;2e-16 ***
+s(ndate) 3.999  4.993 41.59  &lt;2e-16 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-R-sq.(adj) =  0.525   Deviance explained = 54.8%
-NCV = 2181.3  Scale est. = 5.6974    n = 365</code></pre>
+R-sq.(adj) =  0.382   Deviance explained = 38.9%
+NCV = 3855.2  Scale est. = 7.4073    n = 365</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b3, bal_2019,</span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b3"</span>, <span class="at">ci_label=</span><span class="st">"pred_b3"</span>)</span>
@@ -796,16 +797,16 @@ NCV = 2181.3  Scale est. = 5.6974    n = 365</code></pre>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># construct this the other way around, we want to predict each point:</span></span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>nei <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>i <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">365</span> <span class="co">#partygirl</span></span>
-<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>mi <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(start)</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>d <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">365</span> <span class="co">#partygirl</span></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>md <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(start)</span>
 <span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a><span class="co"># now take the 20 either side</span></span>
-<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="fu">lapply</span>(nei<span class="sc">$</span>i, \(x){</span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="fu">lapply</span>(nei<span class="sc">$</span>d, \(x){</span>
 <span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">max</span>(<span class="fu">c</span>(<span class="dv">1</span>, x<span class="dv">-20</span>))<span class="sc">:</span><span class="fu">min</span>(<span class="fu">c</span>(<span class="dv">365</span>, x<span class="sc">+</span><span class="dv">20</span>))</span>
 <span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>})</span>
 <span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>k <span class="ot">&lt;-</span> <span class="fu">unlist</span>(nt)</span>
-<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>m <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(<span class="fu">lapply</span>(nt, length))</span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>a <span class="ot">&lt;-</span> <span class="fu">unlist</span>(nt)</span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>nei<span class="sc">$</span>ma <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(<span class="fu">lapply</span>(nt, length))</span>
 <span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a><span class="co"># let the set we're predicting to be just the datum in the middle of the</span></span>
 <span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a><span class="co"># training set</span></span>
 <span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a></span>
@@ -833,18 +834,18 @@ COSMOS_VWC ~ s(ndate, k = 20)
 
 Parametric coefficients:
             Estimate Std. Error t value Pr(&gt;|t|)    
-(Intercept)  32.2112     0.1278     252   &lt;2e-16 ***
+(Intercept)  32.2112     0.5371   59.97   &lt;2e-16 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Approximate significance of smooth terms:
-           edf Ref.df     F p-value    
-s(ndate) 17.47  18.69 20.95  &lt;2e-16 ***
+           edf Ref.df     F  p-value    
+s(ndate) 3.166  3.955 7.041 2.46e-05 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-R-sq.(adj) =  0.525   Deviance explained = 54.8%
-NCV = 2181.3  Scale est. = 5.6974    n = 365</code></pre>
+R-sq.(adj) =  0.216   Deviance explained = 36.4%
+NCV = 3393.2  Scale est. = 7.6855    n = 365</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>bal_2019 <span class="ot">&lt;-</span> <span class="fu">pred_with_ci</span>(b4, bal_2019,</span>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pred_label=</span><span class="st">"pred_b4"</span>, <span class="at">ci_label=</span><span class="st">"pred_b4"</span>)</span>
@@ -899,6 +900,12 @@ NCV = 2181.3  Scale est. = 5.6974    n = 365</code></pre>
 <p>For the <code>b4</code>, the modification of <code>b2</code> where we only predict back to the middle value, we see a much wider confidence/credible band around the mean prediction. Again, thinking about this in terms of minimizing average prediction error helps us make sense of what’s happening here. For a larger prediction neighbourhood, some things come out in the wash better: we overfit somewhere but that underfits somewhere else, so the result for that fold isn’t as bad. When we predict only 1 point (and don’t include the autocorrelated data around it) we become more uncertain, since each of those differences between the fitted and observed values<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a> are then considered alone, without the neighbours “helping” to average things out.</p>
 <p>Thinking about the “real” objective of NCV (average prediction error on unseen data) helps us understand what’s going on here.</p>
 <p>Hopefully this is a helpful lesson in thinking about how NCV works and how the schemes used to fit the model can give rather different answers.</p>
+</section>
+<section id="addenda" class="level1">
+<h1>Addenda</h1>
+<ul>
+<li>Thanks to Zachary Susswein for <a href="https://github.com/dill/calgary/issues/1">spotting a bug</a> regarding a <a href="https://cran.r-project.org/web/packages/mgcv/ChangeLog">change in the syntax</a> for <code>mgcv</code>. The <code>mgcvUtils</code> package has also been updated to take this into account.</li>
+</ul>
 
 
 
