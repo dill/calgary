@@ -383,7 +383,72 @@ This approach is neat because it fits into the general `mgcv` scheme of fitting 
 
 An early approach to this problem is suggested in @ruppert_spatiallyadaptive_2000. Their approach is similar in some ways, but doesn't use the nice properties of P-splines (for example they model the penalty basis on the $\log_e$ scale, which seems weird given the B-spline basis functions are positive). It feels a bit less elegant that what I describe above. @baladandayuthapani_spatially_2005 and @crainiceanu_spatially_2007 build on this approach further. @lang_bayesian_2004 and @jullion_robust_2007 provide fully Bayesian approaches but again don't quite get to the elegance of the above. @yue_bayesian_2014 propose a much more fancy version, again Bayesian, applying the SPDE approach in INLA. I need to think about that last paper more, but the approach involves things like formulating stochastic differential equations and words like "Galerkin approximation" so it will have to wait until a future date.
 
+
+# Bonus: plotting the smoothing parameter over the covariate
+
+Reader Philip Dixon asks how to plot $\lambda(x)$ over $x$ to give an idea of how the smoothing parameter changes as a function of the covariate.
+
+We start by noting that the penalty matrices for the adaptive smoother are also basis matrices for the spline that defines the smoothing parameter function $\lambda(x)=B \boldsymbol{\gamma}$. Since `mgcv` provides the penalties as a component of the returned object, we can simply extract these, multiply by the estimated coefficients, and sum to get the resulting function.
+
+The function below is based on using the default values given to `s()` when for a univariate smoothing when using `bs="ad"`. Some fiddling may be required when using non-default options (for example, in some limited cases `m` and `bs`  will need to be checked/changed). `term` indicates which term in the model should be plotted.
+
+```{r smooth-plot-sp}
+#| label: smooth-plot-sp
+#| fig.cap: Left plot shows the penalty as a function of time (actually over the interval the knots fall over, scaled to (0,1)), with the right plot showing the smoother itself to help understand the values.
+#| fig.width: 10
+#| fig.height: 4
+#| message: false
+plot_adaptive_1d <- function(model, term=1, bs="ps", m=2, nplot=100){
+
+  # this is the number of parameters for the ad smooth
+  # (as opposed to the penalty)
+  nk <- model$smooth[[term]]$bs.dim
+
+  # spline basis size is number of smoothing parameters
+  # this is gamma
+  k <- length(model$sp)
+
+  # this is the basis setup as happens within
+  # smooth.construct.ad.smooth.spec
+
+  # create a grid with points equally spaced over 0,1
+  # (as many as there are basis functions in the main smooth)
+  x <- 1:(nk-2)/nk
+
+  # construct the smoother object
+  s2 <- smooth.construct(s(x, k=k, bs="ps", m=m, fx=TRUE),
+                         data=data.frame(x=x),
+                         knots=NULL)
+
+  # we could just extract the $X element from the above, but it's
+  # nicer to have something at an arbitrary resolution
+  pp <- PredictMat(s2, data.frame(x=seq(0, 1, length.out=nplot)))
+
+  # first and last "internal" knots
+  ktsmm <- model$smooth[[1]]$knots
+  ktsmm <- ktsmm[c(1+m/2, length(ktsmm)-1-m/2)]
+
+  # get predicted values and the prediction grid
+  gr <- data.frame(pred = pp%*%model$sp,
+                   x    = seq(ktsmm[1], ktsmm[2], length.out=nplot))
+
+  plot(gr$x, gr$pred, type="l",
+       xlab=model$smooth[[term]]$term, ylab="Smoothing parameter")
+}
+```
+
+The following plot shows this relationship alongside the smoother for comparison. What we can see here is a very small decrease from the starting value of the penalty (due to our increased uncertainty at the "edges" of the data), then a massive increase in the penalty around 30-40 ms. This increase coincides with a much larger range of data in the plot on the right. When the data is more varied like this, we need to increase the penalty value to ensure that the smoother does not try to fly off and visit all of the points.
+
+```{r compare-smoopar-smoother}
+par(mfrow=c(1,2))
+plot_adaptive_1d(b_ad)
+plot(b_ad, shift=coef(b_ad)[1])
+points(mcycle$times, mcycle$accel)
+```
+
+The above function and a 2-dimensional version are available in the [`mgcvUtils`](https://github.com/dill/mgcvUtils) package.
+
 # Thanks
 
-Time to think about this was partly funded by [BioSS](https://www.bioss.ac.uk) "topic group": "what we talk about when we talk about random effects". Thanks also to John Addy for extremely useful discussions.
+Time to think about this was partly funded by [BioSS](https://www.bioss.ac.uk) "topic group": "what we talk about when we talk about random effects". Thanks also to John Addy for extremely useful discussions. Philip Dixon asked the interesting question about visualising the resulting smoothing function.
 
