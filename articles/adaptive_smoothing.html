@@ -262,6 +262,7 @@ window.Quarto = {
   <li><a href="#more-options" id="toc-more-options" class="nav-link" data-scroll-target="#more-options">More options</a></li>
   </ul></li>
   <li><a href="#other-approaches-and-further-reading" id="toc-other-approaches-and-further-reading" class="nav-link" data-scroll-target="#other-approaches-and-further-reading">Other approaches and further reading</a></li>
+  <li><a href="#bonus-plotting-the-smoothing-parameter-over-the-covariate" id="toc-bonus-plotting-the-smoothing-parameter-over-the-covariate" class="nav-link" data-scroll-target="#bonus-plotting-the-smoothing-parameter-over-the-covariate">Bonus: plotting the smoothing parameter over the covariate</a></li>
   <li><a href="#thanks" id="toc-thanks" class="nav-link" data-scroll-target="#thanks">Thanks</a></li>
   </ul>
 </nav>
@@ -661,9 +662,69 @@ Figure&nbsp;6: Comparison of thin-plate splines (left) and adaptive smoothing (r
 <p>This approach is neat because it fits into the general <code>mgcv</code> scheme of fitting GAMs. That means we get to use all the other tools that are in <code>mgcv</code>. That said, lots of people have thought about this problem.</p>
 <p>An early approach to this problem is suggested in <span class="citation" data-cites="ruppert_spatiallyadaptive_2000">Ruppert and Carroll (<a href="#ref-ruppert_spatiallyadaptive_2000" role="doc-biblioref">2000</a>)</span>. Their approach is similar in some ways, but doesn’t use the nice properties of P-splines (for example they model the penalty basis on the <span class="math inline">\(\log_e\)</span> scale, which seems weird given the B-spline basis functions are positive). It feels a bit less elegant that what I describe above. <span class="citation" data-cites="baladandayuthapani_spatially_2005">Baladandayuthapani <em>et al.</em> (<a href="#ref-baladandayuthapani_spatially_2005" role="doc-biblioref">2005</a>)</span> and <span class="citation" data-cites="crainiceanu_spatially_2007">Crainiceanu <em>et al.</em> (<a href="#ref-crainiceanu_spatially_2007" role="doc-biblioref">2007</a>)</span> build on this approach further. <span class="citation" data-cites="lang_bayesian_2004">Lang and Brezger (<a href="#ref-lang_bayesian_2004" role="doc-biblioref">2004</a>)</span> and <span class="citation" data-cites="jullion_robust_2007">Jullion and Lambert (<a href="#ref-jullion_robust_2007" role="doc-biblioref">2007</a>)</span> provide fully Bayesian approaches but again don’t quite get to the elegance of the above. <span class="citation" data-cites="yue_bayesian_2014">Yue <em>et al.</em> (<a href="#ref-yue_bayesian_2014" role="doc-biblioref">2014</a>)</span> propose a much more fancy version, again Bayesian, applying the SPDE approach in INLA. I need to think about that last paper more, but the approach involves things like formulating stochastic differential equations and words like “Galerkin approximation” so it will have to wait until a future date.</p>
 </section>
+<section id="bonus-plotting-the-smoothing-parameter-over-the-covariate" class="level1">
+<h1>Bonus: plotting the smoothing parameter over the covariate</h1>
+<p>Reader Philip Dixon asks how to plot <span class="math inline">\(\lambda(x)\)</span> over <span class="math inline">\(x\)</span> to give an idea of how the smoothing parameter changes as a function of the covariate.</p>
+<p>We start by noting that the penalty matrices for the adaptive smoother are also basis matrices for the spline that defines the smoothing parameter function <span class="math inline">\(\lambda(x)=B \boldsymbol{\gamma}\)</span>. Since <code>mgcv</code> provides the penalties as a component of the returned object, we can simply extract these, multiply by the estimated coefficients, and sum to get the resulting function.</p>
+<p>The function below is based on using the default values given to <code>s()</code> when for a univariate smoothing when using <code>bs="ad"</code>. Some fiddling may be required when using non-default options (for example, in some limited cases <code>m</code> and <code>bs</code> will need to be checked/changed). <code>term</code> indicates which term in the model should be plotted.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>plot_adaptive_1d <span class="ot">&lt;-</span> <span class="cf">function</span>(model, <span class="at">term=</span><span class="dv">1</span>, <span class="at">bs=</span><span class="st">"ps"</span>, <span class="at">m=</span><span class="dv">2</span>, <span class="at">nplot=</span><span class="dv">100</span>){</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># this is the number of parameters for the ad smooth</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># (as opposed to the penalty)</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  nk <span class="ot">&lt;-</span> model<span class="sc">$</span>smooth[[term]]<span class="sc">$</span>bs.dim</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># spline basis size is number of smoothing parameters</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># this is gamma</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="fu">length</span>(model<span class="sc">$</span>sp)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># this is the basis setup as happens within</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># smooth.construct.ad.smooth.spec</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create a grid with points equally spaced over 0,1</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># (as many as there are basis functions in the main smooth)</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>(nk<span class="dv">-2</span>)<span class="sc">/</span>nk</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># construct the smoother object</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>  s2 <span class="ot">&lt;-</span> <span class="fu">smooth.construct</span>(<span class="fu">s</span>(x, <span class="at">k=</span>k, <span class="at">bs=</span><span class="st">"ps"</span>, <span class="at">m=</span>m, <span class="at">fx=</span><span class="cn">TRUE</span>),</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>                         <span class="at">data=</span><span class="fu">data.frame</span>(<span class="at">x=</span>x),</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>                         <span class="at">knots=</span><span class="cn">NULL</span>)</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>  <span class="co"># we could just extract the $X element from the above, but it's</span></span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>  <span class="co"># nicer to have something at an arbitrary resolution</span></span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>  pp <span class="ot">&lt;-</span> <span class="fu">PredictMat</span>(s2, <span class="fu">data.frame</span>(<span class="at">x=</span><span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out=</span>nplot)))</span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># first and last "internal" knots</span></span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>  ktsmm <span class="ot">&lt;-</span> model<span class="sc">$</span>smooth[[<span class="dv">1</span>]]<span class="sc">$</span>knots</span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>  ktsmm <span class="ot">&lt;-</span> ktsmm[<span class="fu">c</span>(<span class="dv">1</span><span class="sc">+</span>m<span class="sc">/</span><span class="dv">2</span>, <span class="fu">length</span>(ktsmm)<span class="sc">-</span><span class="dv">1</span><span class="sc">-</span>m<span class="sc">/</span><span class="dv">2</span>)]</span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>  <span class="co"># get predicted values and the prediction grid</span></span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>  gr <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">pred =</span> pp<span class="sc">%*%</span>model<span class="sc">$</span>sp,</span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>                   <span class="at">x    =</span> <span class="fu">seq</span>(ktsmm[<span class="dv">1</span>], ktsmm[<span class="dv">2</span>], <span class="at">length.out=</span>nplot))</span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot</span>(gr<span class="sc">$</span>x, gr<span class="sc">$</span>pred, <span class="at">type=</span><span class="st">"l"</span>,</span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a>       <span class="at">xlab=</span>model<span class="sc">$</span>smooth[[term]]<span class="sc">$</span>term, <span class="at">ylab=</span><span class="st">"Smoothing parameter"</span>)</span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The following plot shows this relationship alongside the smoother for comparison. What we can see here is a very small decrease from the starting value of the penalty (due to our increased uncertainty at the “edges” of the data), then a massive increase in the penalty around 30-40 ms. This increase coincides with a much larger range of data in the plot on the right. When the data is more varied like this, we need to increase the penalty value to ensure that the smoother does not try to fly off and visit all of the points.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_adaptive_1d</span>(b_ad)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(b_ad, <span class="at">shift=</span><span class="fu">coef</span>(b_ad)[<span class="dv">1</span>])</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="fu">points</span>(mcycle<span class="sc">$</span>times, mcycle<span class="sc">$</span>accel)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="adaptive_smoothing_files/figure-html/compare-smoopar-smoother-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The above function and a 2-dimensional version are available in the <a href="https://github.com/dill/mgcvUtils"><code>mgcvUtils</code></a> package.</p>
+</section>
 <section id="thanks" class="level1">
 <h1>Thanks</h1>
-<p>Time to think about this was partly funded by <a href="https://www.bioss.ac.uk">BioSS</a> “topic group”: “what we talk about when we talk about random effects”. Thanks also to John Addy for extremely useful discussions.</p>
+<p>Time to think about this was partly funded by <a href="https://www.bioss.ac.uk">BioSS</a> “topic group”: “what we talk about when we talk about random effects”. Thanks also to John Addy for extremely useful discussions. Philip Dixon asked the interesting question about visualising the resulting smoothing function.</p>
 
 
 

@@ -5,31 +5,15 @@
     <lastmod>2023-12-15T09:23:06.122Z</lastmod>
   </url>
   <url>
-    <loc>https://calgary.converged.yt/articles/adaptive_smoothing.html</loc>
-    <lastmod>2025-07-04T15:06:10.128Z</lastmod>
+    <loc>https://calgary.converged.yt/articles/identifiability.html</loc>
+    <lastmod>2026-01-08T11:11:14.920Z</lastmod>
   </url>
   <url>
-    <loc>https://calgary.converged.yt/articles/ncv.html</loc>
-    <lastmod>2025-07-14T12:23:31.800Z</lastmod>
+    <loc>https://calgary.converged.yt/articles/ncv_timeseries.html</loc>
+    <lastmod>2025-07-14T12:19:32.567Z</lastmod>
   </url>
   <url>
-    <loc>https://calgary.converged.yt/articles/parapen.html</loc>
-    <lastmod>2024-06-13T18:55:15.040Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/articles/gaussian_processes.html</loc>
-    <lastmod>2025-06-19T10:37:55.477Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/index.html</loc>
-    <lastmod>2023-12-04T12:31:49.140Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/references.html</loc>
-    <lastmod>2023-05-18T17:02:21.828Z</lastmod>
-  </url>
-  <url>
-    <loc>https://calgary.converged.yt/contributing.html</loc>
+    <loc>https://calgary.converged.yt/articles/gamvar.html</loc>
     <lastmod>2023-12-04T12:31:49.140Z</lastmod>
   </url>
   <url>
@@ -37,16 +21,28 @@
     <lastmod>2023-12-15T09:32:40.400Z</lastmod>
   </url>
   <url>
-    <loc>https://calgary.converged.yt/articles/gamvar.html</loc>
+    <loc>https://calgary.converged.yt/contributing.html</loc>
     <lastmod>2023-12-04T12:31:49.140Z</lastmod>
   </url>
   <url>
-    <loc>https://calgary.converged.yt/articles/random_effects_overview.html</loc>
-    <lastmod>2024-09-17T09:45:04.338Z</lastmod>
+    <loc>https://calgary.converged.yt/references.html</loc>
+    <lastmod>2023-05-18T17:02:21.828Z</lastmod>
   </url>
   <url>
-    <loc>https://calgary.converged.yt/articles/ncv_timeseries.html</loc>
-    <lastmod>2025-07-14T12:19:32.567Z</lastmod>
+    <loc>https://calgary.converged.yt/index.html</loc>
+    <lastmod>2023-12-04T12:31:49.140Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/articles/tensors.html</loc>
+    <lastmod>2025-11-12T06:55:40.834Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/articles/ncv.html</loc>
+    <lastmod>2025-07-14T12:23:31.800Z</lastmod>
+  </url>
+  <url>
+    <loc>https://calgary.converged.yt/articles/adaptive_smoothing.html</loc>
+    <lastmod>2026-03-12T15:45:50.088Z</lastmod>
   </url>
   <url>
     <loc>https://calgary.converged.yt/articles/poisson_processes.html</loc>

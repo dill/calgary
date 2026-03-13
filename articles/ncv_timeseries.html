@@ -457,7 +457,7 @@ R-sq.(adj) =  0.517   Deviance explained = 53.7%
 <pre><code>
 Method: REML   Optimizer: outer newton
 full convergence after 6 iterations.
-Gradient range [-2.903424e-06,1.933717e-07]
+Gradient range [-2.903424e-06,1.933716e-07]
 (score 865.2256 &amp; scale 5.784242).
 Hessian positive definite, eigenvalue range [3.383494,181.77].
 Model rank =  20 / 20 
@@ -540,7 +540,7 @@ R-sq.(adj) =  0.338
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># install mgcvUtils</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">"dill/mgcvUtils"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Skipping install of 'mgcvUtils' from a github remote, the SHA1 (591e49eb) has not changed since last install.
+<pre><code>Skipping install of 'mgcvUtils' from a github remote, the SHA1 (fbb4da62) has not changed since last install.
   Use `force = TRUE` to force installation</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcvUtils)</span>
@@ -569,9 +569,9 @@ R-sq.(adj) =  0.338
 <div class="cell-output cell-output-stdout">
 <pre><code>Correlation structure of class corARMA representing
         Phi1         Phi2         Phi3         Phi4         Phi5         Phi6 
- 0.799479439 -0.020661745 -0.008212782  0.041640033  0.005374396 -0.066563900 
+ 0.799476490 -0.020659353 -0.008210269  0.041635993  0.005375572 -0.066565166 
         Phi7         Phi8         Phi9        Phi10 
- 0.029101288 -0.020098370  0.031653960 -0.003262715 </code></pre>
+ 0.029107012 -0.020108384  0.031665962 -0.003267695 </code></pre>
 </div>
 </div>
 <p>indicating strong positive correlation between the data at a lag of 1, then smaller correlations at further lags.</p>
@@ -683,8 +683,8 @@ NCV = 1.3349e+05  Scale est. = 7.5862    n = 365</code></pre>
 <span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
 <span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position=</span><span class="st">"bottom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Warning in max(ids, na.rm = TRUE): no non-missing arguments to max; returning
--Inf</code></pre>
+<pre><code>Warning: Removed 365 rows containing missing values or values outside the scale range
+(`geom_ribbon()`).</code></pre>
 </div>
 <div class="cell-output-display">
 <div>

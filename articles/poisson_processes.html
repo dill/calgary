@@ -510,7 +510,7 @@ Figure&nbsp;2: Triangulation that we’ll use for the gorilla nest example. The 
 <pre><code>Loading required package: nlme</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>This is mgcv 1.9-3. For overview type 'help("mgcv-package")'.</code></pre>
+<pre><code>This is mgcv 1.9-4. For overview type '?mgcv'.</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>pp <span class="ot">&lt;-</span> <span class="fu">gam</span>(presence <span class="sc">~</span> <span class="fu">offset</span>(larea) <span class="sc">+</span> <span class="fu">s</span>(x, y, <span class="at">bs=</span><span class="st">"tp"</span>, <span class="at">k=</span><span class="dv">40</span>),</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">data=</span>ppm_dat, <span class="at">method=</span><span class="st">"REML"</span>, <span class="at">family=</span><span class="fu">poisson</span>())</span>

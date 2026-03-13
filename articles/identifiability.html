@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="David L Miller">
-<meta name="dcterms.date" content="2024-07-31">
+<meta name="dcterms.date" content="2026-01-08">
 
-<title>Penalized parametric components and more with paraPen – Yes! You can do that in `mgcv`!</title>
+<title>Identifiability constraints – Yes! You can do that in mgcv!</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -249,8 +249,16 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#background" id="toc-background" class="nav-link active" data-scroll-target="#background">Background</a></li>
-  <li><a href="#acknowledgements" id="toc-acknowledgements" class="nav-link" data-scroll-target="#acknowledgements">Acknowledgements</a></li>
+  <li><a href="#in-one-dimension" id="toc-in-one-dimension" class="nav-link active" data-scroll-target="#in-one-dimension">In one dimension</a>
+  <ul class="collapse">
+  <li><a href="#thin-plate-splines-as-an-example" id="toc-thin-plate-splines-as-an-example" class="nav-link" data-scroll-target="#thin-plate-splines-as-an-example">Thin-plate splines as an example</a></li>
+  <li><a href="#general-approach-using-constraints" id="toc-general-approach-using-constraints" class="nav-link" data-scroll-target="#general-approach-using-constraints">General approach using constraints</a>
+  <ul class="collapse">
+  <li><a href="#back-to-factors" id="toc-back-to-factors" class="nav-link" data-scroll-target="#back-to-factors">Back to factors</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#tensor-products" id="toc-tensor-products" class="nav-link" data-scroll-target="#tensor-products">Tensor products</a></li>
+  <li><a href="#bayesian-stuff" id="toc-bayesian-stuff" class="nav-link" data-scroll-target="#bayesian-stuff">Bayesian stuff</a></li>
   </ul>
 </nav>
     </div>
@@ -259,7 +267,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Penalized parametric components and more with <code>paraPen</code></h1>
+<h1 class="title">Identifiability constraints</h1>
 </div>
 
 
@@ -276,7 +284,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 31, 2024</p>
+      <p class="date">January 8, 2026</p>
     </div>
   </div>
   
@@ -288,54 +296,106 @@ window.Quarto = {
 </header>
 
 
-<p>This article covers a little-known <code>mgcv</code> feature: the <code>paraPen</code> argument. You might have seen it referenced in <code>?gam</code> or <code>?gam.models</code> but not known what you can do with it? This is for you.</p>
-<p>On a broad scale what <code>paraPen</code> can do for you is allow you to setup your own smooths/random effects/etc, allowing you to emulate the <code>s()</code> function in a GAM formula. I’ll show some examples of how to do that and talk about how it works.</p>
-<section id="background" class="level1">
-<h1>Background</h1>
-<p>Let’s start by talking about the things that happen when you execute a piece of code like:</p>
+<p>If you’ve spent a bit of time working with GAMs with multiple smooths in them, your mind might have stayed to thinking about how to make sure different components of the model don’t “overlap”. That is: if each smoother in the model has the capacity to duplicate basically any function then it needs to include an intercept. If we have multiple intercepts in the model then we can just add some number to one of them and subtract it from another and end up with the same model, right?</p>
+<p>Not only does this problem make it hard to interpret the model coefficients, it also makes fitting pretty much impossible (we have an infinite set of possible solutions to our optimization problem, since we can add/subtract any number <span class="math inline">\(a\in\mathbb{R}\)</span>).</p>
+<p>Ignoring the GAM case for now, we can see a version of this problem occurs in linear models when we have a factor covariate. Naively writing-down a model with an intercept and a categorical variable <span class="math inline">\(x\)</span> with two levels (“A” and “B”, say) we would have the following model: <span class="math display">\[\begin{equation}
+\mathbb{E}(Y_i) = \beta_0 + \beta_A \mathbb{I}(x=A) + \beta_B \mathbb{I}(x=B),
+\label{notidentifiable}
+\end{equation}\]</span> where <span class="math inline">\(\mathbb{I}\)</span> is an indicator function that is 1 when the expression inside it is true.</p>
+<p>Model (<span class="math inline">\(\ref{notidentifiable}\)</span>) is not identifiable: we can add some number to <span class="math inline">\(\beta_0\)</span>, then subtract it from <span class="math inline">\(\beta_A\)</span> and <span class="math inline">\(\beta_B\)</span> with no effect on <span class="math inline">\(\mathbb{E}(Y_i)\)</span>. Our usual way to deal with this problem in R is to use <em>contrasts</em>; we absorb one of the level coefficients into <span class="math inline">\(\beta_0\)</span> and let the other be the difference (or “contrast”) between <span class="math inline">\(\beta_0\)</span> and that level. So we might let <span class="math inline">\(\beta_0=^D\beta_A\)</span> and let <span class="math inline">\(\beta_{B^+}\)</span> be the difference between levels A and B, giving the following model: <span class="math display">\[\begin{equation}
+\mathbb{E}(Y_i) = \beta_0 + \beta_{B^+}\mathbb{I}(x=B).
+\label{identifiable-contrast}
+\end{equation}\]</span> So the effect of the A level is <span class="math inline">\(\beta_0\)</span> and the effect of the B level is <span class="math inline">\(\beta_0+\beta_{B^+}\)</span>. As an alternative, we could instead use the “index variable” approach where we do-away with <span class="math inline">\(\beta_0\)</span> altogether and estimate only <span class="math inline">\(\beta_A\)</span> and <span class="math inline">\(\beta_B\)</span>.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>Extending our categorical variable to three levels<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>, we have a naive model that looks like <span class="math display">\[\begin{equation}
+\mathbb{E}(Y_i) = \beta_0 + \beta_A \mathbb{I}(x=A) + \beta_B \mathbb{I}(x=B) + \beta_C \mathbb{I}(x=C),
+\end{equation}\]</span> which we can write in matrix form per (<span class="math inline">\(\ref{matform}\)</span>) with (taking just the first six rows of the data with some imagined values) <span class="math display">\[\begin{equation}
+\mathbf{X} = \pmatrix{1 &amp; 1 &amp; 0 &amp; 0\\
+                      1 &amp; 1 &amp; 0 &amp; 0\\
+                      1 &amp; 0 &amp; 1 &amp; 0\\
+                      1 &amp; 0 &amp; 1 &amp; 0\\
+                      1 &amp; 0 &amp; 0 &amp; 1\\
+                      1 &amp; 0 &amp; 0 &amp; 1
+                     },
+\label{simpleX}
+\end{equation}\]</span> where we can see we can obtain the first column as a sum of the other three. Our approach above, dropping a level and absorbing that effect into the overall intercept is equivalent to dropping the second column here, leaving <span class="math display">\[\begin{equation}
+\mathbf{X}^* = \pmatrix{1 &amp; 0 &amp; 0\\
+                        1 &amp; 0 &amp; 0\\
+                        1 &amp; 1 &amp; 0\\
+                        1 &amp; 1 &amp; 0\\
+                        1 &amp; 0 &amp; 1\\
+                        1 &amp; 0 &amp; 1
+                       }.
+\end{equation}\]</span></p>
+<p>So, how can we translate this idea into a general approach? First let <span class="math inline">\(\mathbf{X}_1\)</span> be the non-all-ones columns in <span class="math inline">\(\mathbf{X}\)</span> (the last three columns in (<span class="math inline">\(\ref{simpleX}\)</span>), for example), so we might now write <span class="math inline">\(\mathbf{X} = [\mathbf{1}, \mathbf{X}_1]\)</span>. We might then imagine some matrix, <span class="math inline">\(\mathbf{C}_1\)</span> which maps between <span class="math inline">\(\mathbf{X}\)</span> and <span class="math inline">\(\mathbf{X}^*\)</span>, so that <span class="math inline">\(\mathbf{X}^* = \mathbf{X}\mathbf{C}_1\)</span>. In our example case, we can write <span class="math display">\[
+\mathbf{C}_1 = \pmatrix{0 &amp; 0\\
+                      1 &amp; 0\\
+                      0 &amp; 1
+                     }.
+\]</span> We refer to <span class="math inline">\(\mathbf{C}_1\)</span> as a <em>contrast</em><a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> and there are a number of different rules we can use to form different contrasts that give different interpretations. You can see which one your R session with the following:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: nlme</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>This is mgcv 1.9-3. For overview type 'help("mgcv-package")'.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># example from ?gam</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">gamSim</span>(<span class="dv">1</span>,<span class="at">n=</span><span class="dv">400</span>,<span class="at">dist=</span><span class="st">"normal"</span>,<span class="at">scale=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="st">"contrasts"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Gu &amp; Wahba 4 term additive model</code></pre>
+<pre><code>$contrasts
+        unordered           ordered 
+"contr.treatment"      "contr.poly" </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">gam</span>(y<span class="sc">~</span><span class="fu">s</span>(x0), <span class="at">data=</span>dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Lots of things happen, of course, but a key conceptual step here is that <code>gam()</code> knows to construct the model using only <code>data</code> and the formula specification <code>y~s(x0)</code>. The two main parts that the model needs are a design matrix and a penalty matrix. When we write <code>s()</code>, <code>mgcv</code> will assume you’re using the thin plate regression spline basis <span class="citation" data-cites="wood_thin_2003">(<a href="#ref-wood_thin_2003" role="doc-biblioref">Wood, 2003</a>)</span> and pass the data (plus, in this case the default, values for <code>k</code> etc) to the appropriate <code>smooth.construct.tp.smooth.spec</code> method<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. That “smooth constructor” method will then generate a standardized output consisting of<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> the design matrix and penalty matrix/matrices.</p>
-<p>As we know from spline basics <span class="citation" data-cites="wood_generalized_2017-1">(<a href="#ref-wood_generalized_2017-1" role="doc-biblioref">Wood, 2017</a>)</span>, the design matrix is constructed by taking each datum and applying each basis function to it. So if we selected 10 (the default for univariate smooths) basis functions (setting <code>k=10</code>) and we have <span class="math inline">\(n\)</span> data, we end-up with a <span class="math inline">\(n\times 10\)</span> design matrix.</p>
+<p>With these examples in mind, we can start to think about what happens when we have splines (or more generally structured random effects) as terms in our models and how we might generalize the above ideas to allow for automatically identifiable models.</p>
+<section id="in-one-dimension" class="level1">
+<h1>In one dimension</h1>
+<p>When we add a smoother to our model, we might write it as <span class="math inline">\(s(x)\)</span> (a smooth function, <span class="math inline">\(s\)</span>, of a variable, <span class="math inline">\(x\)</span>). We model <span class="math inline">\(s(x)\)</span> as a set of basis functions, so we can decompose <span class="math inline">\(s(x)\)</span> into a sum of (<span class="math inline">\(k=1,\ldots,K\)</span>) basis functions (<span class="math inline">\(b_k\)</span>) multiplied by coefficients (<span class="math inline">\(\beta_k\)</span>) that we estimate: <span class="math display">\[
+s(x)=\sum_{k=1}^K \beta_k b_k(x).
+\]</span></p>
+<section id="thin-plate-splines-as-an-example" class="level2">
+<h2 class="anchored" data-anchor-id="thin-plate-splines-as-an-example">Thin-plate splines as an example</h2>
+<p>The exact form of the <span class="math inline">\(b_k\)</span>s will depend on the basis we choose. For the default thin-plate regression splines in <code>mgcv</code> <span class="citation" data-cites="wood_thin_2003">(<a href="#ref-wood_thin_2003" role="doc-biblioref">Wood, 2003</a>)</span>, the basis can be thought of in two parts (here simplifying to just one dimension to avoid headaches). Splitting the <span class="math inline">\(K\)</span> functions into set of length <span class="math inline">\(K_1\)</span> and <span class="math inline">\(K_2\)</span> (such that <span class="math inline">\(K=K_1+K_2\)</span> and elements of them are indexed by <span class="math inline">\(k_1\)</span> and <span class="math inline">\(k_2\)</span><a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>): <span class="math display">\[\begin{equation}
+s(x) = \sum_{k_1=1}^{K_1} \delta_{k_1} \eta_{k_1}(\lvert \lvert x-x_{k_1} \rvert \rvert) + \sum_{k_2=1}^{K_2=2} \alpha_{k_2} \phi_{k_2}(x),
+\label{tprs-basis-1d}
+\end{equation}\]</span> where the first summation contains (locally-acting) radial basis functions<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a> (<span class="math inline">\(\eta_{k_1}\)</span>, functions of the radial distance between <span class="math inline">\(x\)</span> and the <span class="math inline">\(k_1^\text{th}\)</span> knot, <span class="math inline">\(x_{k_1}\)</span>), with corresponding coefficients <span class="math inline">\(\delta_{k_1}\)</span> which are penalized (they are in the <em>range space</em> of the penalty). The second summation contains (globally-acting) orthogonal polynomials <span class="math inline">\(\phi_{k_2}\)</span> with coefficients <span class="math inline">\(\alpha_{k_2}\)</span> which are not penalized (they lie in the <em>nullspace</em> of the penalty, so even with arbitrarily high levels of smoothing, they remain in the model).</p>
+<p>In constructing the polynomial part of (<span class="math inline">\(\ref{tprs-basis-1d}\)</span>) in one dimension we include the terms <span class="math inline">\(\phi_1(x)=1\)</span> and <span class="math inline">\(\phi_2(x)=x\)</span>. As in the case with categorical variables above, <span class="math inline">\(\phi_1(x)=1\)</span> will cause an issue, as it’s effectively going to cause us to estimate a second intercept term. As such, we need to remove it to ensure our model fits and we can interpret the results.</p>
 </section>
-<section id="acknowledgements" class="level1">
-<h1>Acknowledgements</h1>
-<p>I was alerted to the existence of <code>paraPen</code> by Mark Bravington and Sharon Hedley when we wrote our paper on variance propagation <span class="citation" data-cites="bravingtonVariancePropagationDensity2021">(<a href="#ref-bravingtonVariancePropagationDensity2021" role="doc-biblioref">Bravington <em>et al.</em>, 2021</a>)</span>.</p>
+<section id="general-approach-using-constraints" class="level2">
+<h2 class="anchored" data-anchor-id="general-approach-using-constraints">General approach using constraints</h2>
+<p>Thinking about our problem in terms of matrices, we start by writing down our model in matrix notation: <span class="math display">\[\begin{equation}
+\mathbb{E}(\mathbf{y}) = \mathbf{X}\boldsymbol{\beta}
+\label{matform}
+\end{equation}\]</span> where <span class="math inline">\(\mathbf{y}\)</span> is the response, <span class="math inline">\(\mathbf{X}\)</span> is the design matrix and <span class="math inline">\(\boldsymbol{\beta}\)</span> are the parameters to be estimated. We form <span class="math inline">\(\mathbf{X}\)</span> by evaluating <span class="math inline">\(\eta_{k_1}\)</span> for <span class="math inline">\(k_1 \in 1,\ldots,K_1\)</span> and <span class="math inline">\(\phi_{k_2}\)</span> for <span class="math inline">\(k_2 \in 1,\ldots,K_2\)</span> at each datum (giving <span class="math inline">\(K\)</span> values) and placing the values in the rows of <span class="math inline">\(\mathbf{X}\)</span>. The identifiability problem manifests itself in the design matrix by having columns which can be formed as linear combinations of each other.</p>
+<section id="back-to-factors" class="level3">
+<h3 class="anchored" data-anchor-id="back-to-factors">Back to factors</h3>
+<p>How can we deal with identifiability in a general way? We can recast our identifiability constraint as a <em>constraint</em> on our optimization problem. The constraint we need is that the coefficients</p>
+<p><span class="citation" data-cites="wood_generalized_2017a">Wood (<a href="#ref-wood_generalized_2017a" role="doc-biblioref">2017</a>)</span> Section 1.8.1 covers this for linear models</p>
+</section>
+</section>
+</section>
+<section id="tensor-products" class="level1">
+<h1>Tensor products</h1>
+</section>
+<section id="bayesian-stuff" class="level1">
+
 
 
 
 </section>
 
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
-<div id="ref-bravingtonVariancePropagationDensity2021" class="csl-entry" role="listitem">
-Bravington, M. V., Miller, D. L. and Hedley, S. L. (2021) Variance <span>Propagation</span> for <span>Density Surface Models</span>. <em>Journal of Agricultural, Biological and Environmental Statistics</em>. DOI: <a href="https://doi.org/10.1007/s13253-021-00438-2">10.1007/s13253-021-00438-2</a>.
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">Bayesian stuff</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-mcelreath_statistical_2020" class="csl-entry" role="listitem">
+McElreath, R. (2020) <em>Statistical Rethinking: A <span>Bayesian</span> Course with Examples in <span>R</span> and <span>Stan</span></em>. Second edition. Chapman &amp; <span>Hall</span>/<span>CRC</span> texts in statistical science series. Boca Raton: CRC Press.
 </div>
 <div id="ref-wood_thin_2003" class="csl-entry" role="listitem">
 Wood, S. N. (2003) Thin plate regression splines. <em>Journal of the Royal Statistical Society: Series B (Statistical Methodology)</em>, <strong>65</strong>, 95–114.
 </div>
-<div id="ref-wood_generalized_2017-1" class="csl-entry" role="listitem">
+<div id="ref-wood_generalized_2017a" class="csl-entry" role="listitem">
 Wood, S. N. (2017) <em>Generalized <span>Additive Models</span>. <span>An Introduction</span> with <span>R</span></em>. 2nd ed. Texts in <span>Statistical Science</span>. CRC Press.
 </div>
 </div></section><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
 <ol>
-<li id="fn1"><p>Each smoother in <code>mgcv</code> has one of these in the form <code>smooth.construct.*.smooth.spec</code>. Looking at the source code for these can be a really useful way to learn new numerical tricks and implementation details.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2"><p>Amongst other things, see <code>?mgcv::smoothCon</code>.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn1"><p>This approach is particularly useful in a fully Bayesian setting where we might want to set the same prior on each level. See <span class="citation" data-cites="mcelreath_statistical_2020">McElreath (<a href="#ref-mcelreath_statistical_2020" role="doc-biblioref">2020</a>)</span> section 5.3.1 for a friendly introduction.@wood_generalized_2017a Section 1.8.2 covers this in more mathematical detail.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>This example is borrowed from <span class="citation" data-cites="wood_generalized_2017a">Wood (<a href="#ref-wood_generalized_2017a" role="doc-biblioref">2017</a>)</span> Section 1.8.2.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>The term contrast generally means a linear combination of variables that sum to zero see [the wikipedia page](https://en.wikipedia.org/wiki/Contrast_(statistics).<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>Usually, we would set <span class="math inline">\(K_2=n\)</span>, the number of observations in the data, then do a reduced rank approximation using an eigen decomposition, but we don’t care about these technicalities here. <span class="math inline">\(K_2\)</span> (usually referred to as <span class="math inline">\(M\)</span>) is defined as <span class="math inline">\({m+d-1 \choose d}\)</span> where <span class="math inline">\(m\)</span> is the penalty order and <span class="math inline">\(d\)</span> is the dimension of the problem. Again, let’s ignore these technical details here and assume second order penalties in 1 dimension, as would be usual, making <span class="math inline">\(K_2=2\)</span>.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>Let’s not worry about their exact definitions here. You can look at <span class="citation" data-cites="wood_thin_2003">Wood (<a href="#ref-wood_thin_2003" role="doc-biblioref">2003</a>)</span> if you really want to know.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

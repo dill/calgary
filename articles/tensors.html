@@ -8,7 +8,7 @@
 
 <meta name="author" content="David L Miller">
 
-<title>Gaussian processes – Yes! You can do that in mgcv!</title>
+<title>Tensor products – Yes! You can do that in mgcv!</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -85,6 +85,35 @@ MathJax.Hub.Config({
   };
 </script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -165,16 +194,7 @@ MathJax.Hub.Config({
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#what-is-a-gaussian-process" id="toc-what-is-a-gaussian-process" class="nav-link active" data-scroll-target="#what-is-a-gaussian-process">What is a Gaussian process?</a>
-  <ul class="collapse">
-  <li><a href="#links-to-kriging" id="toc-links-to-kriging" class="nav-link" data-scroll-target="#links-to-kriging">Links to kriging</a></li>
-  </ul></li>
-  <li><a href="#gaussian-processes-in-mgcv-bsgp" id="toc-gaussian-processes-in-mgcv-bsgp" class="nav-link" data-scroll-target="#gaussian-processes-in-mgcv-bsgp">Gaussian processes in <code>mgcv</code>: <code>bs="gp"</code></a>
-  <ul class="collapse">
-  <li><a href="#gaussian-process-formulation-in-mgcv" id="toc-gaussian-process-formulation-in-mgcv" class="nav-link" data-scroll-target="#gaussian-process-formulation-in-mgcv">Gaussian process formulation in <code>mgcv</code></a></li>
-  <li><a href="#going-beyond-the-defaults" id="toc-going-beyond-the-defaults" class="nav-link" data-scroll-target="#going-beyond-the-defaults">Going beyond the defaults</a></li>
-  </ul></li>
-  <li><a href="#thanks" id="toc-thanks" class="nav-link" data-scroll-target="#thanks">Thanks</a></li>
+  <li><a href="#thanks" id="toc-thanks" class="nav-link active" data-scroll-target="#thanks">Thanks</a></li>
   </ul>
 </nav>
     </div>
@@ -183,7 +203,7 @@ MathJax.Hub.Config({
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Gaussian processes</h1>
+<h1 class="title">Tensor products</h1>
 </div>
 
 
@@ -206,34 +226,46 @@ MathJax.Hub.Config({
 </header>
 
 
-<p>If you’ve spent any amount of time talking to other people about how you use GAMs, there’s a good chance that someone has asked you “why don’t you use Gaussian processes?” My aim here is to help answer that question in a useful way.</p>
-<p>I’ll begin with some definitions, links to splines and other smoothers, then talk about how Gaussian processes work in <code>mgcv</code>.</p>
-<section id="what-is-a-gaussian-process" class="level1">
-<h1>What is a Gaussian process?</h1>
-<p>When we talk about smoothing, the usual GAM-centric way of thinking about things is in terms of basis functions and penalties. We have a complicated function we want to estimate, we break that down into little basis functions that are fixed, estimate coefficients for each of them (subject to the penalties) and we’re done.</p>
-<p>As the name might give away, Gaussian processes take a <em>stochastic process</em>-based view of the world instead. We can think of our complicated wiggly function as a realisation from a stochastic process – specifically one with a Gaussian form.</p>
-<section id="links-to-kriging" class="level2">
-<h2 class="anchored" data-anchor-id="links-to-kriging">Links to kriging</h2>
-</section>
-</section>
-<section id="gaussian-processes-in-mgcv-bsgp" class="level1">
-<h1>Gaussian processes in <code>mgcv</code>: <code>bs="gp"</code></h1>
-<p>Fitting Gaussian processes in <code>mgcv</code> is possible via the <code>"gp"</code> basis: simply changing <code>bs="gp"</code> in your <code>s()</code>/<code>te()</code>/<code>t2()</code> terms will give you <em>a</em> Gaussian process, but there are some extra notes that it’s worth bearing in mind while working with them in <code>mgcv</code>.</p>
-<section id="gaussian-process-formulation-in-mgcv" class="level2">
-<h2 class="anchored" data-anchor-id="gaussian-process-formulation-in-mgcv">Gaussian process formulation in <code>mgcv</code></h2>
-</section>
-<section id="going-beyond-the-defaults" class="level2">
-<h2 class="anchored" data-anchor-id="going-beyond-the-defaults">Going beyond the defaults</h2>
-</section>
-</section>
+<p>Tensor products are the standard way to construct smoothers of 2 or more dimensions when each dimension is measured on a different scale (i.e., <em>anisotropic</em> smoothing)<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<p>We can build a tensor product basis as follows. If we have two univariate smooths <span class="math inline">\(s_x(x)\)</span> and <span class="math inline">\(s_y(y)\)</span>, we can look at their basis expansions: <span class="math display">\[\begin{equation*}
+    s_x(x) = \sum_k \beta_k b_k(x) \quad \text{and} \quad s_y(y) = \sum_l \zeta_l d_l(y),
+\end{equation*}\]</span> where in each summation the Greek letters, <span class="math inline">\(\beta_k\)</span> and <span class="math inline">\(\zeta_l\)</span>, indicate parameters to estimate and Latin letters, <span class="math inline">\(b_k\)</span> and <span class="math inline">\(d_l\)</span>, give fixed basis functions.</p>
+<p>We can generate a bivariate function from a combination of these terms by taking <span class="math inline">\(s_x(x)\)</span> and asking how to make this a function of <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span>. We can do this by making each <span class="math inline">\(\beta_k\)</span> a function of <span class="math inline">\(y\)</span>, using the basis expansion we already have for <span class="math inline">\(s_y(y)\)</span>, hence: <span class="math display">\[\begin{equation*}
+    \beta_k(y)  = \sum_l \zeta_{kl} d_l(y).
+\end{equation*}\]</span> Then we can substitute that back into the basis expansion for <span class="math inline">\(s_x(x)\)</span> to give: <span class="math display">\[\begin{equation*}
+    s_{xy}(x,y) = \sum_k \beta_{k}(y) b_k(x) = \sum_k  \sum_l \zeta_{kl} d_l(y) b_k(x) .
+\end{equation*}\]</span> We can iterate this process to build tensor products of any number of dimensions.</p>
+<p>The corresponding penalties, which measure the wigglyness of the smooth, are constructed as follows. Primary reference for this is and readers should consult that text for further details, including more general versions of the penalties.</p>
+<p>Going back to the univariate terms we started with, each have a penalty: <span class="math display">\[\begin{equation}
+    J_x(s_x) = \lambda_x \boldsymbol{\beta}^\intercal \mathbf{S}_x \boldsymbol{\beta} \quad \text{and} \quad J_y(s_y) = \lambda_y \boldsymbol{\zeta}^\intercal \mathbf{S}_y \boldsymbol{\zeta},
+\label{eq:mat-pen}
+\end{equation}\]</span> where <span class="math inline">\(\boldsymbol{\beta}\)</span> and <span class="math inline">\(\boldsymbol{\zeta}\)</span> are vectors containing the relevant parameters. <span class="math inline">\(\mathbf{S}_x\)</span> and <span class="math inline">\(\mathbf{S}_y\)</span> are fixed matrices measuring the wigglyness of the basis functions. To regulate the importance of the penalties, each has an associated , <span class="math inline">\(\lambda_x\)</span> and <span class="math inline">\(\lambda_y\)</span> which scale the influence of the penalty. <span class="math inline">\(J_x(s_x)\)</span> and <span class="math inline">\(J_y(s_y)\)</span> will be added to the negative <span class="math inline">\(\log\)</span>-likelihood to create a penalized likelihood when taking a ``frequentist’’ (actually empirical Bayes) view of the model, or may be viewed as precision matrices of the multivariate normal (zero mean) priors on the parameters .</p>
+<p>For the sake of clarity and simplicity, we’ll say <span class="math inline">\(J_x(s_x)\)</span> and <span class="math inline">\(J_y(s_y)\)</span> are based on a cubic regression spline basis, so in each case we have: <span class="math display">\[\begin{equation}
+    J_x(s_x) = \lambda_x \int \left( \frac{\partial^2 s_x(x)}{\partial x^2}\right)^2 dx \quad \text{and} \quad J_y(s_y) = \lambda_y \int \left( \frac{\partial^2 s_y(y)}{\partial y^2}\right)^2 dy.
+\label{eq:int-pen}
+\end{equation}\]</span> Intuitively, we can think of the second derivatives as calculating the how the smoother changes over the range of <span class="math inline">\(x\)</span>, squaring this removes issues about the sign of those changes, and integrating that gives an overall wigglyness measure for the term. A bit of algebra shows that we can re-write (<span class="math inline">\(\ref{eq:int-pen}\)</span>) in the form of (<span class="math inline">\(\ref{eq:mat-pen}\)</span>) where we have fixed matrices (<span class="math inline">\(\mathbf{S}_x\)</span> and <span class="math inline">\(\mathbf{S}_y\)</span>) we only need calculate once and parameters (<span class="math inline">\(\boldsymbol{\beta}\)</span> and <span class="math inline">\(\boldsymbol{\zeta}\)</span>) which change during model fitting. In practice this means that model fitting has the computational complexity of matrix multiplication, rather than of differentiation/integration.</p>
+<p>Now we want to find <span class="math inline">\(J_{xy}(s_{xy})\)</span>, the combined penalty of the interaction between smooths of <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span>. We previously found that the basis for the tensor product of <span class="math inline">\(s_x\)</span> and <span class="math inline">\(s_y\)</span> is: <span class="math display">\[\begin{equation*}
+    s_{xy}(x,y) = \sum_k  \sum_l \zeta_{kl} b_k(x) d_l(y).
+\end{equation*}\]</span> A straightforward way of thinking about a penalty for this term (again thinking about the cubic spline case) is: <span class="math display">\[\begin{equation}
+J_{xy}(s_{xy}) = \int \lambda_x \left( \frac{\partial^2 s_{xy}(x,y)}{\partial x^2}\right)^2 + \lambda_y \left( \frac{\partial^2 s_{xy}(x,y)}{\partial y^2}\right)^2 dx dy.
+\label{eq:tensor-pen}
+\end{equation}\]</span> This formulation lets us look at the changes in each direction, holding the other constant, so we get the overall wigglyness of the function from the sum over those directions.</p>
+<p>We can re-write (<span class="math inline">\(\ref{eq:tensor-pen}\)</span>) in the matrix form, as we did in (<span class="math inline">\(\ref{eq:mat-pen}\)</span>). We can again iterate this process to build tensor products of any number of dimensions. , Section 5.6.2 provides further details.</p>
+<p>%First we create a vector which concatenates the two sets of parameters of the marginal smooths, so <span class="math inline">\(\boldsymbol{\gamma} = (\boldsymbol{\beta},\boldsymbol{\zeta})\)</span>. We can find matrices <span class="math inline">\(\mathbf{M}_x\)</span> and <span class="math inline">\(\mathbf{M}_y\)</span> that, for example, <span class="math inline">\(\mathbf{M}_x\boldsymbol{\gamma} = \boldsymbol{\zeta}(x)\)</span>. That is, the matrices that map the vector of all parameters to parameters that are only functions of the opposing covariates (similarly, <span class="math inline">\(\mathbf{M}_y\boldsymbol{\gamma} = \boldsymbol{\beta}(y)\)</span>). So: %\begin{equation*} %J_{xy}(s_{xy}) = _x ( )^2 + _y ( )^2 dx dy. %\end{equation*}</p>
 <section id="thanks" class="level1">
 <h1>Thanks</h1>
-<p>Time to think about this was partly funded by UK Natural Environment Research Council under grant <a href="https://gotw.nerc.ac.uk/list_full.asp?pcode=NE%2FZ503563%2F1&amp;classtype=&amp;cookieConsent=A">SOCCATOA: Soil Organic Carbon Change: A Tool for the Accreditation of land-based climate change mitigation activities</a>.</p>
+<p>Time to think about this was partly funded by <a href="https://www.bioss.ac.uk">BioSS</a> “topic group”: “what we talk about when we talk about random effects”. Thanks also to John Addy for extremely useful discussions.</p>
 
 
 </section>
 
-</main> <!-- /main -->
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>For isotropic smoothing we can just use thin plate splines in any number of dimensions.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
